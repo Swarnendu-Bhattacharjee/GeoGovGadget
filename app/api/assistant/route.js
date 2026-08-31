@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { generateFeatures } from "@/lib/geo";
+import { generateFeatures, findOverlaps } from "@/lib/geo";
 
 // POST /api/assistant
 // A 24/7 natural-language interface over the plot dataset — the feature a
@@ -28,7 +28,13 @@ export async function POST(request) {
     return NextResponse.json({ error: "missing question" }, { status: 400 });
   }
 
-  const dataset = generateFeatures("assistant-dataset").features.map((f) => ({
+  const featureCollection = generateFeatures("assistant-dataset");
+  const idToSurvey = Object.fromEntries(
+    featureCollection.features.map((f) => [f.properties.id, f.properties.surveyNo])
+  );
+  const overlaps = findOverlaps(featureCollection).map(([a, b]) => [idToSurvey[a], idToSurvey[b]]);
+
+  const dataset = featureCollection.features.map((f) => ({
     id: f.properties.id,
     class: f.properties.class,
     surveyNo: f.properties.surveyNo,
@@ -43,10 +49,13 @@ export async function POST(request) {
 
   const systemPrompt = `You are the GeoGovGadget assistant — a 24/7 query interface for government officials working with AI-extracted cadastral records (parcel boundaries, building footprints, land-use zones) from Problem Statement 26012, "AI-Enabled Automated Cadastral Mapping and Urban Parcel Boundary Extraction using Drone/Satellite Imagery".
 
-Answer questions about the plot dataset below using only what it contains. Be concise and factual. If asked about a plot, cite its survey number and ward. If asked something the dataset doesn't cover, say so plainly rather than inventing details — this dataset is a demo sample, not a live production database, so say that when it's relevant (e.g. if asked "is this real data"). You may also answer general questions about how the GeoGovGadget platform works (segmentation, topology validation, verification workflow, edge deployment) based on the problem statement above.
+Answer questions about the plot dataset and topology check below using only what they contain. Be concise and factual. If asked about a plot, cite its survey number and ward. If asked something the dataset doesn't cover, say so plainly rather than inventing details — this dataset is a demo sample, not a live production database, so say that when it's relevant (e.g. if asked "is this real data"). You may also answer general questions about how the GeoGovGadget platform works (segmentation, topology validation, verification workflow, edge deployment) based on the problem statement above.
 
 Dataset (JSON):
-${JSON.stringify(dataset, null, 2)}`;
+${JSON.stringify(dataset, null, 2)}
+
+Topology check — pairs of survey numbers whose polygons geometrically overlap (a real, computed encroachment/inconsistency risk, not a demo placeholder):
+${overlaps.length ? JSON.stringify(overlaps) : "none found in the current dataset"}`;
 
   const messages = [
     { role: "system", content: systemPrompt },
@@ -61,7 +70,7 @@ ${JSON.stringify(dataset, null, 2)}`;
       Authorization: `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
-      model: "llama-3.3-70b-versatile",
+      model: "openai/gpt-oss-120b",
       messages,
       temperature: 0.2,
       max_tokens: 700,
