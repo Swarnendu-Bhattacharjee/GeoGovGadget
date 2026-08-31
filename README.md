@@ -71,6 +71,19 @@ tolerated. If your terminal ever reports a Next.js version that doesn't match th
 `"next"` line in `package.json`, you're not running this project's dependencies — `cd` into
 the repo root, run `npm install`, and use the `npm run ...` scripts, not `next` directly.
 
+**If you already ran `npm install next@latest` (or similar) trying to fix an earlier error**,
+that rewrites your local `package.json`/`package-lock.json` to a newer, untested Next.js —
+in one case this pulled in Next 16 + React 19, which `react-leaflet` v4 doesn't officially
+support, and threw `Map container is already initialized` on the map pages. Undo it and
+reinstall from the committed, tested versions:
+
+```bash
+git checkout -- package.json package-lock.json
+rm -rf node_modules
+npm install
+npm run dev
+```
+
 ## AI assistant setup
 
 `/assistant` calls `POST /api/assistant`, which needs a Groq API key (get one free at
