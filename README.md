@@ -7,6 +7,8 @@ See [`PROJECT_PLAN.md`](./PROJECT_PLAN.md) for scope, roles, and today's timelin
 See [`docs/API_CONTRACT.md`](./docs/API_CONTRACT.md) for the backend↔frontend contract.
 See [`docs/GIT_WORKFLOW.md`](./docs/GIT_WORKFLOW.md) for branching/PR rules — `main` is
 protected, everyone else works on a `yourname-thing` branch and opens a PR.
+See [`docs/pipeline-diagram.html`](./docs/pipeline-diagram.html) for the system flow
+diagram (open it in a browser, or screenshot it for the deck).
 
 ## Backend (stub, live)
 
