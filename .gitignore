@@ -1,6 +1,10 @@
 node_modules/
 *.log
 .env
+.env.local
+.next/
+out/
+.vercel
 data/outputs/*
 !data/outputs/.gitkeep
 *.db

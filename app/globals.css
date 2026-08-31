@@ -1,0 +1,36 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url("https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=Source+Sans+3:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap");
+
+html,
+body {
+  background: #0b1220;
+  color: #e7ebf2;
+}
+
+.leaflet-container {
+  background: #0b1220;
+  font-family: "Source Sans 3", sans-serif;
+}
+
+.leaflet-popup-content-wrapper,
+.leaflet-popup-tip {
+  background: #121b2e;
+  color: #e7ebf2;
+  border: 1px solid #2a3a54;
+}
+
+.leaflet-popup-content-wrapper {
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-thumb {
+  background: #2a3a54;
+  border-radius: 8px;
+}
