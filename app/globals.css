@@ -26,6 +26,72 @@ body {
   border-radius: 10px;
 }
 
+.ggg-leaflet-popup .leaflet-popup-content {
+  margin: 12px 14px;
+  min-width: 190px;
+}
+
+.ggg-popup {
+  font-family: "Source Sans 3", sans-serif;
+}
+
+.ggg-popup-title {
+  font-family: "Archivo", sans-serif;
+  font-weight: 700;
+  font-size: 13.5px;
+  color: #e7ebf2;
+  margin-bottom: 6px;
+}
+
+.ggg-popup-body {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 11px;
+  line-height: 1.7;
+  color: #8fa0bc;
+}
+
+.ggg-popup-status {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 11px;
+  font-weight: 600;
+  margin-top: 6px;
+}
+
+.ggg-popup-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.ggg-popup-btn {
+  flex: 1;
+  font-family: "Source Sans 3", sans-serif;
+  font-size: 11.5px;
+  font-weight: 600;
+  padding: 6px 0;
+  border-radius: 6px;
+  border: 1px solid #2a3a54;
+  background: #16233b;
+  color: #e7ebf2;
+  cursor: pointer;
+}
+
+.ggg-popup-btn.ggg-approve {
+  background: #7fd88f;
+  color: #0b1220;
+  border-color: #7fd88f;
+}
+
+.ggg-popup-btn.ggg-reject {
+  background: #e57373;
+  color: #0b1220;
+  border-color: #e57373;
+}
+
+.ggg-popup-btn.ggg-delete {
+  background: transparent;
+}
+
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;

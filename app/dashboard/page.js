@@ -207,6 +207,9 @@ export default function Dashboard() {
                 drawMode={drawMode}
                 drawPoints={drawPoints}
                 onMapClick={handleMapClick}
+                onApprove={(id) => setStatus(id, "approved")}
+                onReject={(id) => setStatus(id, "rejected")}
+                onDelete={deleteFeature}
               />
             )}
           </div>
