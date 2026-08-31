@@ -1,0 +1,8 @@
+node_modules/
+*.log
+.env
+data/outputs/*
+!data/outputs/.gitkeep
+*.db
+*:Zone.Identifier
+.DS_Store
