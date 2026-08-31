@@ -5,6 +5,8 @@ drone/satellite imagery.
 
 See [`PROJECT_PLAN.md`](./PROJECT_PLAN.md) for scope, roles, and today's timeline.
 See [`docs/API_CONTRACT.md`](./docs/API_CONTRACT.md) for the backend↔frontend contract.
+See [`docs/GIT_WORKFLOW.md`](./docs/GIT_WORKFLOW.md) for branching/PR rules — `main` is
+protected, everyone else works on a `yourname-thing` branch and opens a PR.
 
 ## Backend (stub, live)
 
