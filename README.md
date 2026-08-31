@@ -61,6 +61,16 @@ Try building your app with 'next build' before starting the production server.
 
 If you hit that, run `npm run build` once, then `npm start` works.
 
+**Always run `npm run dev` / `npm run build` / `npm start` — never `npx next dev` or a bare
+`next` command.** This project pins Next.js to `14.2.35` in `package-lock.json`. If you
+instead run `next` directly (or `npx next` without `node_modules` properly installed), npx
+can fetch and run whatever the latest global Next.js is instead of this project's pinned
+version — a teammate hit exactly this and got Next.js 16 with Turbopack, which parses CSS
+more strictly than 14's webpack pipeline and surfaced a `globals.css` ordering bug that 14
+tolerated. If your terminal ever reports a Next.js version that doesn't match the
+`"next"` line in `package.json`, you're not running this project's dependencies — `cd` into
+the repo root, run `npm install`, and use the `npm run ...` scripts, not `next` directly.
+
 ## AI assistant setup
 
 `/assistant` calls `POST /api/assistant`, which needs a Groq API key (get one free at
