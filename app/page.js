@@ -1,335 +1,164 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import dynamic from "next/dynamic";
-import { classStyle, findOverlaps } from "@/lib/geo";
+import { useMemo } from "react";
+import { generateFeatures, findOverlaps } from "@/lib/geo";
 
 const MapView = dynamic(() => import("@/components/MapView"), { ssr: false });
 
-const EMPTY_FC = { type: "FeatureCollection", features: [] };
+const CAPABILITIES = [
+  "Automatic extraction of parcel boundaries",
+  "Identification and delineation of building footprints",
+  "Detection of roads, pathways, and access corridors",
+  "Classification of land-use features in urban areas",
+];
+
+const INPUTS = [
+  "High-resolution drone imagery",
+  "Orthorectified Imagery (ORI)",
+  "DSM / DTM datasets",
+  "Existing GIS parcel layers",
+  "Ground Truthing (GT) datasets",
+  "GNSS / CORS-enabled survey data",
+];
+
+const OUTPUTS = [
+  ["AI/ML-based parcel extraction engine", "seeded demo pipeline today, trained-model swap-in documented"],
+  ["GIS-ready cadastral outputs", "GeoJSON export, topology-checked"],
+  ["Web-based visualization dashboard", "live Web-GIS map with edit + verification"],
+  ["Automated topology validation module", "real polygon-intersection geometry via Turf.js"],
+];
 
 export default function Home() {
-  const [featureCollection, setFeatureCollection] = useState(EMPTY_FC);
-  const [selectedId, setSelectedId] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [uploadedName, setUploadedName] = useState(null);
-  const [drawMode, setDrawMode] = useState(false);
-  const [drawPoints, setDrawPoints] = useState([]);
-  const fileInputRef = useRef(null);
-
-  const overlaps = useMemo(() => findOverlaps(featureCollection), [featureCollection]);
-  const overlapIds = useMemo(() => new Set(overlaps.flat()), [overlaps]);
-
-  const counts = useMemo(() => {
-    const c = { parcel_boundary: 0, building_footprint: 0, road: 0, land_use: 0 };
-    for (const f of featureCollection.features) {
-      if (c[f.properties.class] !== undefined) c[f.properties.class]++;
-    }
-    return c;
-  }, [featureCollection]);
-
-  async function handleFileChange(e) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setLoading(true);
-    setSelectedId(null);
-    try {
-      const body = new FormData();
-      body.append("image", file);
-      const res = await fetch("/api/segment", { method: "POST", body });
-      const data = await res.json();
-      setFeatureCollection(data.polygons);
-      setUploadedName(file.name);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  function setStatus(id, status) {
-    setFeatureCollection((fc) => ({
-      ...fc,
-      features: fc.features.map((f) =>
-        f.properties.id === id ? { ...f, properties: { ...f.properties, status } } : f
-      ),
-    }));
-  }
-
-  function deleteFeature(id) {
-    setFeatureCollection((fc) => ({
-      ...fc,
-      features: fc.features.filter((f) => f.properties.id !== id),
-    }));
-    if (selectedId === id) setSelectedId(null);
-  }
-
-  function handleMapClick(lngLat) {
-    setDrawPoints((pts) => [...pts, lngLat]);
-  }
-
-  function finishDrawing() {
-    if (drawPoints.length < 3) {
-      setDrawMode(false);
-      setDrawPoints([]);
-      return;
-    }
-    const ring = [...drawPoints, drawPoints[0]];
-    const id = `manual-${Date.now()}`;
-    const newFeature = {
-      type: "Feature",
-      properties: { id, class: "parcel_boundary", confidence: 1, status: "approved", drawn: true },
-      geometry: { type: "Polygon", coordinates: [ring] },
-    };
-    setFeatureCollection((fc) => ({ ...fc, features: [...fc.features, newFeature] }));
-    setDrawMode(false);
-    setDrawPoints([]);
-  }
-
-  function cancelDrawing() {
-    setDrawMode(false);
-    setDrawPoints([]);
-  }
-
-  function exportGeoJSON() {
-    const blob = new Blob([JSON.stringify(featureCollection, null, 2)], {
-      type: "application/geo+json",
-    });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "geogovgadget-parcels.geojson";
-    a.click();
-    URL.revokeObjectURL(url);
-  }
-
-  const selectedFeature = featureCollection.features.find((f) => f.properties.id === selectedId);
+  const demoFeatures = useMemo(() => generateFeatures("home-overview-demo"), []);
+  const demoOverlaps = useMemo(() => findOverlaps(demoFeatures), [demoFeatures]);
+  const demoOverlapIds = useMemo(() => new Set(demoOverlaps.flat()), [demoOverlaps]);
 
   return (
-    <main className="min-h-screen">
-      <header className="border-b border-line px-6 py-5 flex flex-wrap items-center justify-between gap-4">
+    <main>
+      {/* Hero */}
+      <section className="px-6 pt-14 pb-10 border-b border-line max-w-5xl mx-auto">
+        <div className="font-mono text-xs tracking-widest text-accent2 uppercase mb-4">
+          Smart India Hackathon 2026 · Problem Statement 26012 · Team INFERICS
+        </div>
+        <h1 className="font-display font-extrabold text-4xl sm:text-5xl tracking-tight text-wrap-balance max-w-3xl">
+          Automated cadastral mapping, from raw imagery to a verified parcel record.
+        </h1>
+        <p className="text-muted text-base sm:text-lg mt-5 max-w-2xl leading-relaxed">
+          GeoGovGadget turns drone and satellite imagery into GIS-ready parcel boundaries,
+          building footprints, and land-use classifications — with a human always verifying
+          before anything counts as official record.
+        </p>
+        <div className="flex flex-wrap gap-3 mt-8">
+          <Link
+            href="/dashboard"
+            className="bg-accent text-ink font-semibold text-sm px-5 py-3 rounded-lg hover:brightness-110 transition"
+          >
+            Open the dashboard
+          </Link>
+          <Link
+            href="/3d-map"
+            className="border border-line text-sm px-5 py-3 rounded-lg hover:bg-surface2 transition"
+          >
+            View 3D map
+          </Link>
+          <Link
+            href="/assistant"
+            className="border border-line text-sm px-5 py-3 rounded-lg hover:bg-surface2 transition"
+          >
+            Ask the AI assistant
+          </Link>
+        </div>
+      </section>
+
+      {/* Background */}
+      <section className="px-6 py-12 border-b border-line max-w-5xl mx-auto grid md:grid-cols-2 gap-10">
         <div>
-          <div className="font-mono text-xs tracking-widest text-accent2 uppercase">
-            SIH 2026 · PS 26012 · Team INFERICS
-          </div>
-          <h1 className="font-display font-extrabold text-2xl sm:text-3xl tracking-tight mt-1">
-            GeoGovGadget
-          </h1>
-          <p className="text-muted text-sm mt-1 max-w-xl">
-            AI-enabled automated cadastral mapping — upload drone/satellite imagery, review
-            extracted parcel &amp; building boundaries on a live map, and validate topology
-            before export.
+          <h2 className="font-display font-bold text-xl mb-3">Why this exists</h2>
+          <p className="text-sm text-muted leading-relaxed">
+            Preparing cadastral maps today relies on manual interpretation of drone imagery and
+            field-based ground truthing — slow, resource-intensive, and hard to keep current.
+            Dense urban settlements, irregular parcel geometries, encroachments, overlapping
+            structures, and mixed land-use patterns make manual digitization even harder,
+            regularly delaying survey completion and land-record updates.
+          </p>
+          <p className="text-sm text-muted leading-relaxed mt-3">
+            High-resolution ORI, DSM/DTM, and drone datasets already exist. What's missing is an
+            automated layer that turns them into preliminary parcel maps a human can verify in
+            minutes instead of building from scratch in weeks.
           </p>
         </div>
-        <div className="flex items-center gap-3">
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            className="hidden"
-            onChange={handleFileChange}
-          />
-          <button
-            onClick={() => fileInputRef.current?.click()}
-            className="bg-accent text-ink font-semibold text-sm px-4 py-2.5 rounded-lg hover:brightness-110 transition"
-            disabled={loading}
-          >
-            {loading ? "Extracting…" : "Upload imagery"}
-          </button>
-          <button
-            onClick={exportGeoJSON}
-            disabled={featureCollection.features.length === 0}
-            className="border border-line text-sm px-4 py-2.5 rounded-lg hover:bg-surface2 transition disabled:opacity-40 disabled:cursor-not-allowed"
-          >
-            Export GeoJSON
-          </button>
+        <div>
+          <h2 className="font-display font-bold text-xl mb-3">Proposed solution</h2>
+          <ul className="flex flex-col gap-2.5">
+            {CAPABILITIES.map((c) => (
+              <li key={c} className="flex items-start gap-2.5 text-sm text-[#e7ebf2]">
+                <span className="w-1.5 h-1.5 rounded-full bg-accent2 mt-1.5 shrink-0" />
+                {c}
+              </li>
+            ))}
+          </ul>
         </div>
-      </header>
-
-      <section className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-0 lg:h-[calc(100vh-97px)]">
-        <div className="p-4 flex flex-col gap-3 min-h-[520px]">
-          <div className="flex flex-wrap items-center gap-2">
-            <StatPill label="Parcels" value={counts.parcel_boundary} color="#ff8a3d" />
-            <StatPill label="Buildings" value={counts.building_footprint} color="#4fd1c5" />
-            <StatPill label="Roads" value={counts.road} color="#8fa0bc" />
-            <StatPill label="Land-use zones" value={counts.land_use} color="#7fd88f" />
-            <StatPill label="Overlaps flagged" value={overlaps.length} color="#ff3b3b" warn />
-            <div className="ml-auto flex items-center gap-2">
-              {!drawMode ? (
-                <button
-                  onClick={() => setDrawMode(true)}
-                  className="font-mono text-xs px-3 py-2 rounded-lg border border-accent text-accent hover:bg-accent hover:text-ink transition"
-                >
-                  + Add parcel manually
-                </button>
-              ) : (
-                <>
-                  <span className="font-mono text-xs text-muted">
-                    click map to add points ({drawPoints.length})
-                  </span>
-                  <button
-                    onClick={finishDrawing}
-                    className="font-mono text-xs px-3 py-2 rounded-lg bg-good text-ink"
-                  >
-                    Finish
-                  </button>
-                  <button
-                    onClick={cancelDrawing}
-                    className="font-mono text-xs px-3 py-2 rounded-lg border border-line"
-                  >
-                    Cancel
-                  </button>
-                </>
-              )}
-            </div>
-          </div>
-
-          <div className="flex-1 min-h-[420px] border border-line rounded-xl overflow-hidden">
-            {featureCollection.features.length === 0 ? (
-              <EmptyState onUpload={() => fileInputRef.current?.click()} />
-            ) : (
-              <MapView
-                featureCollection={featureCollection}
-                overlapIds={overlapIds}
-                selectedId={selectedId}
-                onSelectFeature={setSelectedId}
-                drawMode={drawMode}
-                drawPoints={drawPoints}
-                onMapClick={handleMapClick}
-              />
-            )}
-          </div>
-          {uploadedName && (
-            <p className="font-mono text-[11px] text-muted">
-              source: {uploadedName} · demo-mode segmentation (see lib/geo.js) · overlap check is
-              live geometry via Turf.js
-            </p>
-          )}
-        </div>
-
-        <aside className="border-t lg:border-t-0 lg:border-l border-line p-4 flex flex-col gap-4 overflow-y-auto">
-          <div>
-            <h2 className="font-display font-bold text-sm mb-2">Topology validation</h2>
-            {overlaps.length === 0 ? (
-              <p className="text-xs text-muted">
-                No overlapping parcel or building geometries detected.
-              </p>
-            ) : (
-              <ul className="flex flex-col gap-1.5">
-                {overlaps.map(([a, b]) => (
-                  <li
-                    key={`${a}-${b}`}
-                    className="font-mono text-[11px] text-bad bg-[#2a1414] border border-bad/40 rounded-md px-2.5 py-1.5"
-                  >
-                    encroachment risk: {a} ↔ {b}
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-
-          <div className="border-t border-line pt-4">
-            <h2 className="font-display font-bold text-sm mb-2">
-              Detected features ({featureCollection.features.length})
-            </h2>
-            <ul className="flex flex-col gap-1.5">
-              {featureCollection.features.map((f) => (
-                <li
-                  key={f.properties.id}
-                  onClick={() => setSelectedId(f.properties.id)}
-                  className={`cursor-pointer rounded-md px-2.5 py-2 border text-xs flex items-center justify-between gap-2 transition ${
-                    selectedId === f.properties.id
-                      ? "border-accent2 bg-surface2"
-                      : "border-line hover:bg-surface2"
-                  }`}
-                >
-                  <span className="flex items-center gap-2 min-w-0">
-                    <span
-                      className="w-2.5 h-2.5 rounded-full shrink-0"
-                      style={{ background: classStyle(f.properties.class).fill }}
-                    />
-                    <span className="truncate">{classStyle(f.properties.class).label}</span>
-                  </span>
-                  <StatusBadge status={f.properties.status} />
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {selectedFeature && (
-            <div className="border-t border-line pt-4">
-              <h2 className="font-display font-bold text-sm mb-2">Selected parcel</h2>
-              <div className="text-xs text-muted font-mono mb-1">id: {selectedFeature.properties.id}</div>
-              <div className="text-xs text-muted font-mono mb-3">
-                confidence: {Math.round((selectedFeature.properties.confidence || 0) * 100)}%
-              </div>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setStatus(selectedFeature.properties.id, "approved")}
-                  className="flex-1 text-xs font-semibold bg-good text-ink rounded-md py-2 hover:brightness-110"
-                >
-                  Approve
-                </button>
-                <button
-                  onClick={() => setStatus(selectedFeature.properties.id, "rejected")}
-                  className="flex-1 text-xs font-semibold bg-bad text-ink rounded-md py-2 hover:brightness-110"
-                >
-                  Reject
-                </button>
-                <button
-                  onClick={() => deleteFeature(selectedFeature.properties.id)}
-                  className="text-xs font-semibold border border-line rounded-md px-3 hover:bg-surface2"
-                >
-                  Delete
-                </button>
-              </div>
-            </div>
-          )}
-        </aside>
       </section>
+
+      {/* Inputs / Outputs */}
+      <section className="px-6 py-12 border-b border-line max-w-5xl mx-auto grid md:grid-cols-2 gap-10">
+        <div>
+          <h2 className="font-display font-bold text-xl mb-3">Data it works from</h2>
+          <div className="flex flex-wrap gap-2">
+            {INPUTS.map((i) => (
+              <span
+                key={i}
+                className="font-mono text-[11px] border border-line bg-surface2 rounded-full px-3 py-1.5 text-muted"
+              >
+                {i}
+              </span>
+            ))}
+          </div>
+        </div>
+        <div>
+          <h2 className="font-display font-bold text-xl mb-3">What it delivers</h2>
+          <ul className="flex flex-col gap-3">
+            {OUTPUTS.map(([title, note]) => (
+              <li key={title}>
+                <div className="text-sm font-semibold">{title}</div>
+                <div className="text-xs text-muted mt-0.5">{note}</div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </section>
+
+      {/* Live demo preview */}
+      <section className="px-6 py-12 max-w-5xl mx-auto">
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="font-display font-bold text-xl">See it working</h2>
+          <Link href="/dashboard" className="font-mono text-xs text-accent2 hover:underline">
+            open full dashboard →
+          </Link>
+        </div>
+        <p className="text-sm text-muted mb-4 max-w-2xl">
+          A sample block with parcel boundaries, building footprints, a road, and a land-use
+          zone — the same view an official gets after uploading imagery, with one deliberately
+          flagged overlap to show topology validation working.
+        </p>
+        <div className="h-[420px] border border-line rounded-xl overflow-hidden">
+          <MapView
+            featureCollection={demoFeatures}
+            overlapIds={demoOverlapIds}
+            selectedId={null}
+            onSelectFeature={() => {}}
+            drawMode={false}
+            drawPoints={[]}
+            onMapClick={() => {}}
+          />
+        </div>
+      </section>
+
+      <footer className="px-6 py-8 border-t border-line font-mono text-[11px] text-muted max-w-5xl mx-auto">
+        GeoGovGadget · Team INFERICS · SIH 2026 · Problem Statement 26012
+      </footer>
     </main>
-  );
-}
-
-function StatPill({ label, value, color, warn }) {
-  return (
-    <div
-      className={`flex items-center gap-2 rounded-full border px-3 py-1.5 font-mono text-xs ${
-        warn && value > 0 ? "border-bad text-bad" : "border-line text-muted"
-      }`}
-    >
-      <span className="w-2 h-2 rounded-full" style={{ background: color }} />
-      {label}: <span className="text-[#e7ebf2] font-semibold">{value}</span>
-    </div>
-  );
-}
-
-function StatusBadge({ status }) {
-  const map = {
-    pending: { text: "pending", cls: "text-muted border-line" },
-    approved: { text: "approved", cls: "text-good border-good/40" },
-    rejected: { text: "rejected", cls: "text-bad border-bad/40" },
-  };
-  const s = map[status] || map.pending;
-  return (
-    <span className={`font-mono text-[10px] px-2 py-0.5 rounded-full border shrink-0 ${s.cls}`}>
-      {s.text}
-    </span>
-  );
-}
-
-function EmptyState({ onUpload }) {
-  return (
-    <div className="h-full w-full flex flex-col items-center justify-center gap-3 bg-surface text-center px-6">
-      <div className="font-mono text-xs text-accent2 uppercase tracking-widest">No imagery loaded</div>
-      <p className="text-muted text-sm max-w-sm">
-        Upload a drone or satellite image to run parcel &amp; building extraction and see results
-        on the map.
-      </p>
-      <button
-        onClick={onUpload}
-        className="bg-accent text-ink font-semibold text-sm px-4 py-2.5 rounded-lg hover:brightness-110 transition"
-      >
-        Upload imagery
-      </button>
-    </div>
   );
 }

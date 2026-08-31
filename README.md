@@ -19,7 +19,26 @@ ML-powered to demonstrate the platform correctly:
   a trained Mask R-CNN/U-Net model — training and hosting a real segmentation model is out of
   scope for a same-day build. The swap-in point is documented in `lib/geo.js`
   (`generateFeatures()`) — replacing that function's body with real model output requires no
-  changes anywhere else in the app.
+  changes anywhere else in the app. The 3D map and AI assistant read from the same generator,
+  so wiring in a real model updates all three surfaces at once.
+
+## Pages
+
+- **`/` — Overview.** Purpose, background, proposed solution, and a live read-only demo of
+  the map, for a first-time viewer (judge, official) to understand the platform in one scroll.
+- **`/dashboard` — Web-GIS dashboard.** Upload imagery → `/api/segment` returns a GeoJSON
+  FeatureCollection of parcels, buildings, roads, and land-use zones, rendered live on the
+  map. Click a parcel to approve/reject/delete it. "+ Add parcel manually" draws a new
+  boundary by clicking points on the map. Overlapping parcels/buildings are outlined in red
+  and listed under Topology Validation. Includes an Analytics panel (confidence, area,
+  verification counts) and a Technical panel (stack + architecture diagram link). Export
+  GeoJSON downloads the current feature set.
+- **`/3d-map` — 3D visualization.** MapLibre GL renders every parcel and building as an
+  extruded 3D volume over a basemap — buildings taller by floor count, parcels flat at ground
+  level — hover for a record, click to select. Real geometry, seeded demo data (see below).
+- **`/assistant` — AI assistant.** A 24/7 natural-language query interface over the plot
+  dataset (survey number, ward, ownership, status, verification date) for officials who need
+  an answer in seconds. Powered by the Groq API — see [AI assistant setup](#ai-assistant-setup).
 
 ## Run locally
 
@@ -28,19 +47,28 @@ npm install
 npm run dev       # http://localhost:3000
 ```
 
-- Upload any image → `/api/segment` returns a GeoJSON FeatureCollection of parcels,
-  buildings, roads, and land-use zones, rendered live on the map.
-- Click a parcel to select it, approve/reject it, or delete it.
-- "+ Add parcel manually" lets you draw a new parcel boundary by clicking points on the map.
-- Overlapping parcels/buildings are outlined in red and listed under Topology Validation.
-- Export GeoJSON downloads the current feature set.
+## AI assistant setup
+
+`/assistant` calls `POST /api/assistant`, which needs a Groq API key (get one free at
+https://console.groq.com/keys):
+
+```bash
+cp .env.example .env.local
+# edit .env.local, set GROQ_API_KEY=gsk_...
+npm run dev
+```
+
+Without a key, the endpoint returns a clear 501 error instead of crashing — every other page
+works fine with no key configured.
 
 ## Stack
 
 - **Next.js 14** (App Router, JavaScript) — single deployable app, API routes replace a
   separate backend, matches Vercel's zero-config deploy.
-- **React-Leaflet** — the Web-GIS map.
+- **React-Leaflet** — the 2D Web-GIS map.
+- **MapLibre GL** — the 3D extruded parcel/building visualization.
 - **Turf.js** — real polygon intersection for topology validation.
+- **Groq API** (`llama-3.3-70b-versatile`) — the AI assistant, grounded on the plot dataset.
 - **Tailwind CSS** — styling.
 
 ## Deployment
@@ -48,9 +76,10 @@ npm run dev       # http://localhost:3000
 Repo is structured for a zero-config Vercel deploy (Next.js app lives at repo root):
 
 1. Go to https://vercel.com/new, import `Swarnendu-Bhattacharjee/GeoGovGadget`.
-2. Framework preset: Next.js (auto-detected). No environment variables required for the
-   current build.
-3. Deploy — Vercel builds `npm run build` and serves it. Every push to `main` auto-deploys;
+2. Framework preset: Next.js (auto-detected).
+3. Add environment variable `GROQ_API_KEY` under Project Settings → Environment Variables if
+   you want `/assistant` working in production (every other page works without it).
+4. Deploy — Vercel builds `npm run build` and serves it. Every push to `main` auto-deploys;
    every PR gets its own preview URL.
 
 ## Docs

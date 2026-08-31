@@ -1,4 +1,5 @@
 import "./globals.css";
+import Nav from "@/components/Nav";
 
 export const metadata = {
   title: "GeoGovGadget — AI Cadastral Mapping",
@@ -9,7 +10,10 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <body className="font-body bg-ink text-[#e7ebf2] antialiased">{children}</body>
+      <body className="font-body bg-ink text-[#e7ebf2] antialiased">
+        <Nav />
+        {children}
+      </body>
     </html>
   );
 }

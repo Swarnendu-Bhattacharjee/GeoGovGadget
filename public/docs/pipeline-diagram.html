@@ -1,0 +1,375 @@
+<title>GeoGovGadget Pipeline</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=Source+Sans+3:wght@400;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root {
+    --ink: #0b1220;
+    --surface: #121b2e;
+    --surface-2: #16233b;
+    --line: #2a3a54;
+    --text: #e7ebf2;
+    --muted: #8fa0bc;
+    --accent: #ff8a3d;
+    --accent-dim: #4a2f1a;
+    --accent2: #4fd1c5;
+    --accent2-dim: #16332f;
+    --good: #7fd88f;
+    --font-display: "Archivo", "Arial Narrow", sans-serif;
+    --font-body: "Source Sans 3", "Segoe UI", sans-serif;
+    --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+  }
+  @media (prefers-color-scheme: light) {
+    :root:not([data-theme="light"]) {
+      --ink: #f3f5f1;
+      --surface: #ffffff;
+      --surface-2: #eceee8;
+      --line: #d3dad1;
+      --text: #182018;
+      --muted: #5b6b63;
+      --accent: #d9631e;
+      --accent-dim: #fbe3d1;
+      --accent2: #0e8e82;
+      --accent2-dim: #d7ece9;
+      --good: #2a8f4a;
+    }
+  }
+  :root[data-theme="light"] {
+    --ink: #f3f5f1;
+    --surface: #ffffff;
+    --surface-2: #eceee8;
+    --line: #d3dad1;
+    --text: #182018;
+    --muted: #5b6b63;
+    --accent: #d9631e;
+    --accent-dim: #fbe3d1;
+    --accent2: #0e8e82;
+    --accent2-dim: #d7ece9;
+    --good: #2a8f4a;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--ink);
+    color: var(--text);
+    font-family: var(--font-body);
+    padding: 48px 32px 72px;
+  }
+  .page {
+    max-width: 1180px;
+    margin: 0 auto;
+  }
+
+  .eyebrow {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent2);
+  }
+  h1 {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: clamp(28px, 4vw, 42px);
+    letter-spacing: -0.01em;
+    margin: 8px 0 6px;
+    text-wrap: balance;
+  }
+  .subtitle {
+    color: var(--muted);
+    font-size: 16px;
+    max-width: 66ch;
+    line-height: 1.5;
+    margin: 0 0 40px;
+  }
+  .subtitle code {
+    font-family: var(--font-mono);
+    font-size: 0.92em;
+    color: var(--text);
+  }
+
+  figure {
+    margin: 0 0 12px;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    background: var(--surface);
+    padding: 28px 20px 14px;
+  }
+  figure .diagram-scroll {
+    overflow-x: auto;
+  }
+  svg { display: block; width: 100%; height: auto; }
+  figcaption {
+    font-size: 13px;
+    color: var(--muted);
+    padding: 14px 6px 4px;
+    border-top: 1px solid var(--line);
+    margin-top: 18px;
+    line-height: 1.6;
+  }
+  figcaption strong { color: var(--text); font-weight: 600; }
+
+  .legend {
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+    margin: 22px 0 44px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .legend-item { display: flex; align-items: center; gap: 8px; }
+  .swatch { width: 18px; height: 3px; border-radius: 2px; }
+
+  h2 {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 20px;
+    margin: 0 0 18px;
+    letter-spacing: -0.005em;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+    gap: 14px;
+    margin-bottom: 8px;
+  }
+  .card {
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: var(--surface);
+    padding: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .card .num {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--accent2);
+    letter-spacing: 0.08em;
+  }
+  .card h3 {
+    font-family: var(--font-display);
+    font-size: 15.5px;
+    font-weight: 700;
+    margin: 0;
+  }
+  .card p {
+    font-size: 13.5px;
+    color: var(--muted);
+    line-height: 1.55;
+    margin: 0;
+  }
+  .tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: auto;
+    padding-top: 4px;
+  }
+  .tag {
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    padding: 3px 8px;
+    border-radius: 999px;
+    background: var(--surface-2);
+    color: var(--muted);
+    border: 1px solid var(--line);
+  }
+  .card.edge .num { color: var(--accent); }
+
+  footer {
+    margin-top: 48px;
+    padding-top: 18px;
+    border-top: 1px solid var(--line);
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    color: var(--muted);
+    letter-spacing: 0.02em;
+  }
+</style>
+
+<div class="page">
+  <div class="eyebrow">SIH 2026 · PS 26012 · Team INFERICS</div>
+  <h1>GeoGovGadget system flow</h1>
+  <p class="subtitle">
+    One image goes in — a drone or satellite frame. Two paths process it: the
+    <strong style="color:var(--text)">cloud pipeline</strong> for full accuracy, and the
+    <strong style="color:var(--text)">edge unit</strong> for offline, on-site detection. Both
+    converge on the same verified parcel record.
+  </p>
+
+  <figure>
+    <div class="diagram-scroll">
+      <svg viewBox="0 0 1120 460" role="img" aria-label="Flow diagram: a drone or satellite image is uploaded to the ML/CV engine, which produces segmentation masks; these convert to GeoJSON polygons with an overlap check; the backend API stores them and serves the web dashboard, where a human approves or rejects each parcel, writing status back to the store. A parallel edge path runs the same model as a quantized TensorFlow Lite build on a Raspberry Pi, working fully offline, and syncs results to the backend once connectivity returns.">
+        <defs>
+          <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+          </marker>
+          <marker id="arrow-accent" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="var(--accent)"/>
+          </marker>
+        </defs>
+
+        <!-- grid baseline -->
+        <g stroke="var(--line)" stroke-width="1">
+          <line x1="0" y1="130" x2="1120" y2="130" stroke-dasharray="2 6" opacity="0.5"/>
+          <line x1="0" y1="330" x2="1120" y2="330" stroke-dasharray="2 6" opacity="0.5"/>
+        </g>
+
+        <!-- Row labels -->
+        <text x="8" y="70" font-family="var(--font-mono)" font-size="11" fill="var(--accent2)" letter-spacing="1.5">CLOUD PIPELINE</text>
+        <text x="8" y="270" font-family="var(--font-mono)" font-size="11" fill="var(--accent)" letter-spacing="1.5">EDGE UNIT (OFFLINE)</text>
+
+        <!-- ===== CLOUD ROW nodes ===== -->
+        <!-- 1 Image -->
+        <g transform="translate(20,90)">
+          <rect width="150" height="80" rx="10" fill="var(--surface-2)" stroke="var(--line)"/>
+          <text x="75" y="30" text-anchor="middle" font-family="var(--font-display)" font-weight="700" font-size="13.5" fill="var(--text)">Drone / Satellite</text>
+          <text x="75" y="48" text-anchor="middle" font-family="var(--font-display)" font-weight="700" font-size="13.5" fill="var(--text)">Image</text>
+          <text x="75" y="66" text-anchor="middle" font-family="var(--font-mono)" font-size="10.5" fill="var(--muted)">JPEG / ORI tile</text>
+        </g>
+
+        <!-- 2 ML/CV engine -->
+        <g transform="translate(240,90)">
+          <rect width="170" height="80" rx="10" fill="var(--surface-2)" stroke="var(--accent2)" stroke-width="1.4"/>
+          <text x="85" y="28" text-anchor="middle" font-family="var(--font-display)" font-weight="700" font-size="13.5" fill="var(--text)">ML / CV Engine</text>
+          <text x="85" y="46" text-anchor="middle" font-family="var(--font-mono)" font-size="10.5" fill="var(--accent2)">Mask R-CNN + OpenCV</text>
+          <text x="85" y="63" text-anchor="middle" font-family="var(--font-mono)" font-size="10.5" fill="var(--muted)">→ segmentation masks</text>
+        </g>
+
+        <!-- 3 Geometry conversion -->
+        <g transform="translate(490,90)">
+          <rect width="180" height="80" rx="10" fill="var(--surface-2)" stroke="var(--line)"/>
+          <text x="90" y="24" text-anchor="middle" font-family="var(--font-display)" font-weight="700" font-size="13.5" fill="var(--text)">Geometry Layer</text>
+          <text x="90" y="42" text-anchor="middle" font-family="var(--font-mono)" font-size="10.5" fill="var(--muted)">Shapely → GeoJSON</text>
+          <text x="90" y="60" text-anchor="middle" font-family="var(--font-mono)" font-size="10.5" fill="var(--accent)">+ overlap check</text>
+        </g>
+
+        <!-- 4 Backend API + store -->
+        <g transform="translate(760,80)">
+          <rect width="170" height="100" rx="10" fill="var(--surface-2)" stroke="var(--line)"/>
+          <text x="85" y="26" text-anchor="middle" font-family="var(--font-display)" font-weight="700" font-size="13.5" fill="var(--text)">Backend API</text>
+          <text x="85" y="44" text-anchor="middle" font-family="var(--font-mono)" font-size="10.5" fill="var(--muted)">/segment /parcels</text>
+          <text x="85" y="59" text-anchor="middle" font-family="var(--font-mono)" font-size="10.5" fill="var(--muted)">/verify</text>
+          <line x1="20" y1="70" x2="150" y2="70" stroke="var(--line)"/>
+          <text x="85" y="88" text-anchor="middle" font-family="var(--font-mono)" font-size="10.5" fill="var(--accent2)">SQLite → PostGIS</text>
+        </g>
+
+        <!-- 5 Dashboard -->
+        <g transform="translate(970,20)">
+          <rect width="132" height="150" rx="10" fill="var(--surface-2)" stroke="var(--good)" stroke-width="1.4"/>
+          <text x="66" y="28" text-anchor="middle" font-family="var(--font-display)" font-weight="700" font-size="13" fill="var(--text)">Web-GIS</text>
+          <text x="66" y="45" text-anchor="middle" font-family="var(--font-display)" font-weight="700" font-size="13" fill="var(--text)">Dashboard</text>
+          <text x="66" y="64" text-anchor="middle" font-family="var(--font-mono)" font-size="10" fill="var(--muted)">React + Leaflet</text>
+          <line x1="16" y1="78" x2="116" y2="78" stroke="var(--line)"/>
+          <text x="66" y="98" text-anchor="middle" font-family="var(--font-mono)" font-size="10" fill="var(--good)">approve</text>
+          <text x="66" y="114" text-anchor="middle" font-family="var(--font-mono)" font-size="10" fill="#e57373">reject</text>
+          <text x="66" y="134" text-anchor="middle" font-family="var(--font-mono)" font-size="9.5" fill="var(--muted)">human-in-the-loop</text>
+        </g>
+
+        <!-- Cloud row arrows -->
+        <g stroke="currentColor" stroke-width="1.6" fill="none" color="var(--muted)">
+          <line x1="170" y1="130" x2="236" y2="130" marker-end="url(#arrow)"/>
+          <line x1="410" y1="130" x2="486" y2="130" marker-end="url(#arrow)"/>
+          <line x1="670" y1="130" x2="756" y2="130" marker-end="url(#arrow)"/>
+          <path d="M930,110 C955,90 955,75 966,68" marker-end="url(#arrow)"/>
+        </g>
+        <!-- verify write-back -->
+        <path d="M1010,170 C1010,205 845,205 845,182" stroke="var(--good)" stroke-width="1.6" fill="none" marker-end="url(#arrow)" color="var(--good)"/>
+
+        <text x="200" y="122" font-family="var(--font-mono)" font-size="9.5" fill="var(--muted)">upload</text>
+        <text x="445" y="122" font-family="var(--font-mono)" font-size="9.5" fill="var(--muted)">raw masks</text>
+        <text x="705" y="122" font-family="var(--font-mono)" font-size="9.5" fill="var(--muted)">polygons + flags</text>
+        <text x="925" y="205" text-anchor="middle" font-family="var(--font-mono)" font-size="9.5" fill="var(--good)">status write-back</text>
+
+        <!-- ===== EDGE ROW nodes ===== -->
+        <g transform="translate(20,280)">
+          <rect width="150" height="80" rx="10" fill="var(--surface-2)" stroke="var(--line)"/>
+          <text x="75" y="30" text-anchor="middle" font-family="var(--font-display)" font-weight="700" font-size="13.5" fill="var(--text)">Field Camera</text>
+          <text x="75" y="48" text-anchor="middle" font-family="var(--font-display)" font-weight="700" font-size="13.5" fill="var(--text)">/ Drone Feed</text>
+          <text x="75" y="66" text-anchor="middle" font-family="var(--font-mono)" font-size="10.5" fill="var(--muted)">live on-site</text>
+        </g>
+
+        <g transform="translate(240,280)">
+          <rect width="220" height="80" rx="10" fill="var(--accent-dim)" stroke="var(--accent)" stroke-width="1.4"/>
+          <text x="110" y="26" text-anchor="middle" font-family="var(--font-display)" font-weight="700" font-size="13.5" fill="var(--text)">Raspberry Pi 4/5</text>
+          <text x="110" y="44" text-anchor="middle" font-family="var(--font-mono)" font-size="10.5" fill="var(--accent)">same model, quantized</text>
+          <text x="110" y="61" text-anchor="middle" font-family="var(--font-mono)" font-size="10.5" fill="var(--muted)">TensorFlow Lite</text>
+        </g>
+
+        <g transform="translate(560,280)">
+          <rect width="190" height="80" rx="10" fill="var(--surface-2)" stroke="var(--line)"/>
+          <text x="95" y="30" text-anchor="middle" font-family="var(--font-display)" font-weight="700" font-size="13.5" fill="var(--text)">Preliminary</text>
+          <text x="95" y="48" text-anchor="middle" font-family="var(--font-display)" font-weight="700" font-size="13.5" fill="var(--text)">Boundary Detection</text>
+          <text x="95" y="66" text-anchor="middle" font-family="var(--font-mono)" font-size="10.5" fill="var(--accent)">no connectivity needed</text>
+        </g>
+
+        <g stroke="var(--accent)" stroke-width="1.6" fill="none" color="var(--accent)">
+          <line x1="170" y1="320" x2="236" y2="320" marker-end="url(#arrow-accent)"/>
+          <line x1="460" y1="320" x2="556" y2="320" marker-end="url(#arrow-accent)"/>
+        </g>
+
+        <!-- Sync back up to backend when online -->
+        <path d="M750,300 C900,300 900,190 856,152" stroke="var(--accent)" stroke-width="1.6" stroke-dasharray="5 5" fill="none" marker-end="url(#arrow-accent)" color="var(--accent)"/>
+        <text x="900" y="240" font-family="var(--font-mono)" font-size="9.5" fill="var(--accent)">sync when online</text>
+      </svg>
+    </div>
+    <figcaption>
+      <strong>Two paths, one record.</strong> The cloud pipeline (top) runs the full model
+      against uploaded imagery and puts every polygon in front of a human before it counts as
+      verified. The edge unit (bottom) runs the same model, quantized, directly on a Raspberry
+      Pi in the field — no network required — and syncs its detections into the same backend
+      the moment connectivity is available, so both paths land in one dataset.
+    </figcaption>
+  </figure>
+
+  <div class="legend">
+    <div class="legend-item"><span class="swatch" style="background:var(--muted)"></span> cloud pipeline flow</div>
+    <div class="legend-item"><span class="swatch" style="background:var(--accent)"></span> edge / offline flow</div>
+    <div class="legend-item"><span class="swatch" style="background:var(--good)"></span> human verification write-back</div>
+  </div>
+
+  <h2>The six systems</h2>
+  <div class="grid">
+    <div class="card">
+      <div class="num">01</div>
+      <h3>ML / CV Engine</h3>
+      <p>Reads an image, outputs segmentation masks for buildings, parcel edges, and land-use classes.</p>
+      <div class="tags"><span class="tag">Mask R-CNN</span><span class="tag">OpenCV</span></div>
+    </div>
+    <div class="card">
+      <div class="num">02</div>
+      <h3>Geometry Layer</h3>
+      <p>Converts raw pixel masks into real-world polygons and flags any that overlap — a possible encroachment.</p>
+      <div class="tags"><span class="tag">Shapely</span><span class="tag">GeoJSON</span></div>
+    </div>
+    <div class="card">
+      <div class="num">03</div>
+      <h3>Backend API</h3>
+      <p>Serves segmentation results, stores parcel records, and records each human verification decision.</p>
+      <div class="tags"><span class="tag">Node / Express</span></div>
+    </div>
+    <div class="card">
+      <div class="num">04</div>
+      <h3>Data Store</h3>
+      <p>Holds every parcel and its status today in SQLite; the production target is a spatial-aware PostGIS database.</p>
+      <div class="tags"><span class="tag">SQLite</span><span class="tag">→ PostGIS</span></div>
+    </div>
+    <div class="card">
+      <div class="num">05</div>
+      <h3>Web-GIS Dashboard</h3>
+      <p>Shows detected polygons on a live map; a person approves or rejects each one before it's treated as ground truth.</p>
+      <div class="tags"><span class="tag">React</span><span class="tag">Leaflet</span></div>
+    </div>
+    <div class="card edge">
+      <div class="num">06 · EDGE</div>
+      <h3>Edge Inference Unit</h3>
+      <p>The same model, quantized, running on-device — proves the pipeline works in the field with zero connectivity.</p>
+      <div class="tags"><span class="tag">Raspberry Pi 4/5</span><span class="tag">TensorFlow Lite</span></div>
+    </div>
+  </div>
+
+  <footer>GeoGovGadget · Team INFERICS · SIH 2026 · Problem Statement 26012</footer>
+</div>
