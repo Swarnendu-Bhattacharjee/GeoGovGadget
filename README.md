@@ -47,6 +47,20 @@ npm install
 npm run dev       # http://localhost:3000
 ```
 
+`npm run dev` is what you want day-to-day — no build step needed, hot reload on save.
+
+**Do not run `npm start` unless you've run `npm run build` first.** `npm start` only serves
+an *existing* production build; it doesn't create one. `.next/` (the build output) is
+correctly gitignored and never committed, so a fresh clone has no build yet — running
+`npm start` straight after cloning fails with:
+
+```
+Error: Could not find a production build in the '.next' directory.
+Try building your app with 'next build' before starting the production server.
+```
+
+If you hit that, run `npm run build` once, then `npm start` works.
+
 ## AI assistant setup
 
 `/assistant` calls `POST /api/assistant`, which needs a Groq API key (get one free at
