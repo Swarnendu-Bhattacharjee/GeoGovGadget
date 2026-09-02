@@ -1,0 +1,12 @@
+{
+  "site": "annexure and m,n block",
+  "raw_image": "annexure and m,n block.jpg",
+  "annotation_image": "Gemini_Generated_Image_714p69714p69714p.png",
+  "registration_inliers": 3007,
+  "building_polygons": 18,
+  "mask_coverage_frac": 0.1947,
+  "image_size": {
+    "width": 878,
+    "height": 1064
+  }
+}

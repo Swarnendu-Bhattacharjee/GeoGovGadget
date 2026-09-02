@@ -1,0 +1,9 @@
+# GeoGovGadget Dependencies
+# Install: uv pip install -r requirements.txt
+
+opencv-python>=4.10.0
+numpy>=2.0.0
+
+# Optional for geospatial refinement:
+# opencv-contrib-python>=4.10.0
+# geopandas>=1.0.0

@@ -1,0 +1,139 @@
+{
+  "model": "U-Net (ResNet18 ImageNet encoder)",
+  "trained_on": [
+    "annexure and m,n block",
+    "arch right side hostels",
+    "main eee block entrance area",
+    "srm dental",
+    "srm global",
+    "srm medical",
+    "tech 1,2 audi",
+    "ubi and valli gate"
+  ],
+  "validated_on": [
+    "law school",
+    "bel block and canteen"
+  ],
+  "best_epoch": 35,
+  "metrics": {
+    "mean": {
+      "iou": 0.5367,
+      "precision": 0.6454,
+      "recall": 0.7606,
+      "f1": 0.6983
+    },
+    "per_site": {
+      "law school": {
+        "iou": 0.5596,
+        "precision": 0.6658,
+        "recall": 0.7781,
+        "f1": 0.7176
+      },
+      "bel block and canteen": {
+        "iou": 0.5139,
+        "precision": 0.625,
+        "recall": 0.743,
+        "f1": 0.6789
+      }
+    }
+  },
+  "history": [
+    {
+      "epoch": 5,
+      "loss": 0.9901,
+      "iou": 0.4926,
+      "precision": 0.5933,
+      "recall": 0.7459,
+      "f1": 0.66
+    },
+    {
+      "epoch": 10,
+      "loss": 0.8932,
+      "iou": 0.5033,
+      "precision": 0.5846,
+      "recall": 0.7915,
+      "f1": 0.6696
+    },
+    {
+      "epoch": 15,
+      "loss": 0.7672,
+      "iou": 0.515,
+      "precision": 0.7051,
+      "recall": 0.6552,
+      "f1": 0.6792
+    },
+    {
+      "epoch": 20,
+      "loss": 0.6881,
+      "iou": 0.4305,
+      "precision": 0.4789,
+      "recall": 0.8059,
+      "f1": 0.6008
+    },
+    {
+      "epoch": 25,
+      "loss": 0.6529,
+      "iou": 0.532,
+      "precision": 0.6737,
+      "recall": 0.7165,
+      "f1": 0.6945
+    },
+    {
+      "epoch": 30,
+      "loss": 0.5766,
+      "iou": 0.5091,
+      "precision": 0.5918,
+      "recall": 0.7852,
+      "f1": 0.6747
+    },
+    {
+      "epoch": 35,
+      "loss": 0.5192,
+      "iou": 0.5367,
+      "precision": 0.6454,
+      "recall": 0.7606,
+      "f1": 0.6983
+    },
+    {
+      "epoch": 40,
+      "loss": 0.4883,
+      "iou": 0.5035,
+      "precision": 0.6495,
+      "recall": 0.6921,
+      "f1": 0.6694
+    },
+    {
+      "epoch": 45,
+      "loss": 0.4569,
+      "iou": 0.5262,
+      "precision": 0.6315,
+      "recall": 0.7594,
+      "f1": 0.6896
+    },
+    {
+      "epoch": 50,
+      "loss": 0.4567,
+      "iou": 0.5225,
+      "precision": 0.6266,
+      "recall": 0.7591,
+      "f1": 0.6864
+    },
+    {
+      "epoch": 55,
+      "loss": 0.4224,
+      "iou": 0.5118,
+      "precision": 0.637,
+      "recall": 0.7223,
+      "f1": 0.6769
+    },
+    {
+      "epoch": 60,
+      "loss": 0.4176,
+      "iou": 0.5331,
+      "precision": 0.6606,
+      "recall": 0.7343,
+      "f1": 0.6955
+    }
+  ],
+  "params_millions": 14.33
+}

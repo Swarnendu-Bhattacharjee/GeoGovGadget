@@ -1,0 +1,122 @@
+[
+  {
+    "site": "main eee block entrance area",
+    "raw_image": "main eee block entrance area.jpg",
+    "annotation_image": "Gemini_Generated_Image_3ld01s3ld01s3ld0.png",
+    "registration_inliers": 394,
+    "building_polygons": 24,
+    "mask_coverage_frac": 0.2347,
+    "image_size": {
+      "width": 1600,
+      "height": 1066
+    }
+  },
+  {
+    "site": "srm medical",
+    "raw_image": "srm medical.jpg",
+    "annotation_image": "Gemini_Generated_Image_5kde5n5kde5n5kde (1).png",
+    "registration_inliers": 3053,
+    "building_polygons": 24,
+    "mask_coverage_frac": 0.239,
+    "image_size": {
+      "width": 1006,
+      "height": 686
+    }
+  },
+  {
+    "site": "annexure and m,n block",
+    "raw_image": "annexure and m,n block.jpg",
+    "annotation_image": "Gemini_Generated_Image_714p69714p69714p.png",
+    "registration_inliers": 3007,
+    "building_polygons": 18,
+    "mask_coverage_frac": 0.1947,
+    "image_size": {
+      "width": 878,
+      "height": 1064
+    }
+  },
+  {
+    "site": "arch right side hostels",
+    "raw_image": "arch right side hostels.jpg",
+    "annotation_image": "Gemini_Generated_Image_8yjyde8yjyde8yjy.png",
+    "registration_inliers": 2489,
+    "building_polygons": 22,
+    "mask_coverage_frac": 0.2835,
+    "image_size": {
+      "width": 1600,
+      "height": 1154
+    }
+  },
+  {
+    "site": "ubi and valli gate",
+    "raw_image": "ubi and valli gate.png",
+    "annotation_image": "Gemini_Generated_Image_9grac09grac09gra.png",
+    "registration_inliers": 3009,
+    "building_polygons": 17,
+    "mask_coverage_frac": 0.2874,
+    "image_size": {
+      "width": 794,
+      "height": 1196
+    }
+  },
+  {
+    "site": "srm dental",
+    "raw_image": "srm dental.jpg",
+    "annotation_image": "Gemini_Generated_Image_b6hrlgb6hrlgb6hr.png",
+    "registration_inliers": 2331,
+    "building_polygons": 17,
+    "mask_coverage_frac": 0.2932,
+    "image_size": {
+      "width": 1600,
+      "height": 1039
+    }
+  },
+  {
+    "site": "tech 1,2 audi",
+    "raw_image": "tech 1,2 audi.png",
+    "annotation_image": "Gemini_Generated_Image_l89scbl89scbl89s.png",
+    "registration_inliers": 1805,
+    "building_polygons": 23,
+    "mask_coverage_frac": 0.5192,
+    "image_size": {
+      "width": 828,
+      "height": 766
+    }
+  },
+  {
+    "site": "bel block and canteen",
+    "raw_image": "bel block and canteen.png",
+    "annotation_image": "Gemini_Generated_Image_mgdtklmgdtklmgdt.png",
+    "registration_inliers": 1509,
+    "building_polygons": 10,
+    "mask_coverage_frac": 0.3664,
+    "image_size": {
+      "width": 590,
+      "height": 1024
+    }
+  },
+  {
+    "site": "srm global",
+    "raw_image": "srm global.jpg",
+    "annotation_image": "Gemini_Generated_Image_qyt2l8qyt2l8qyt2.png",
+    "registration_inliers": 3123,
+    "building_polygons": 6,
+    "mask_coverage_frac": 0.6004,
+    "image_size": {
+      "width": 1242,
+      "height": 966
+    }
+  },
+  {
+    "site": "law school",
+    "raw_image": "law school.png",
+    "annotation_image": "Gemini_Generated_Image_vqio71vqio71vqio.png",
+    "registration_inliers": 1679,
+    "building_polygons": 29,
+    "mask_coverage_frac": 0.3902,
+    "image_size": {
+      "width": 944,
+      "height": 946
+    }
+  }
+]

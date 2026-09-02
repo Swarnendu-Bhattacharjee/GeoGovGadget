@@ -1,0 +1,12 @@
+{
+  "site": "main eee block entrance area",
+  "raw_image": "main eee block entrance area.jpg",
+  "annotation_image": "Gemini_Generated_Image_3ld01s3ld01s3ld0.png",
+  "registration_inliers": 394,
+  "building_polygons": 24,
+  "mask_coverage_frac": 0.2347,
+  "image_size": {
+    "width": 1600,
+    "height": 1066
+  }
+}

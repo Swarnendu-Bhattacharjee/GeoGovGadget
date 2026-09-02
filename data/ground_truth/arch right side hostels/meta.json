@@ -1,0 +1,12 @@
+{
+  "site": "arch right side hostels",
+  "raw_image": "arch right side hostels.jpg",
+  "annotation_image": "Gemini_Generated_Image_8yjyde8yjyde8yjy.png",
+  "registration_inliers": 2489,
+  "building_polygons": 22,
+  "mask_coverage_frac": 0.2835,
+  "image_size": {
+    "width": 1600,
+    "height": 1154
+  }
+}

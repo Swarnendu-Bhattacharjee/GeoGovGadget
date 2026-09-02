@@ -1,0 +1,12 @@
+{
+  "site": "srm global",
+  "raw_image": "srm global.jpg",
+  "annotation_image": "Gemini_Generated_Image_qyt2l8qyt2l8qyt2.png",
+  "registration_inliers": 3123,
+  "building_polygons": 6,
+  "mask_coverage_frac": 0.6004,
+  "image_size": {
+    "width": 1242,
+    "height": 966
+  }
+}

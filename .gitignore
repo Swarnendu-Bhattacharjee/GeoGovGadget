@@ -10,3 +10,13 @@ data/outputs/*
 *.db
 *:Zone.Identifier
 .DS_Store
+ml/models/*.pth
+ml/.venv/
+
+
+# Redundant: every entry is already committed extracted under data/IMAGES
+# and data/pranav images/satellite plotted building/
+data/pranav images/*.zip
+
+# Scratch outputs from the detection/benchmark scripts
+/tmp_geogov/

@@ -1,0 +1,12 @@
+{
+  "site": "law school",
+  "raw_image": "law school.png",
+  "annotation_image": "Gemini_Generated_Image_vqio71vqio71vqio.png",
+  "registration_inliers": 1679,
+  "building_polygons": 29,
+  "mask_coverage_frac": 0.3902,
+  "image_size": {
+    "width": 944,
+    "height": 946
+  }
+}

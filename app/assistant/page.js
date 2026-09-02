@@ -6,7 +6,8 @@ const SUGGESTIONS = [
   "Which parcels are still pending verification?",
   "Are there any encroachment risks right now?",
   "How is a building's height estimated on the 3D map?",
-  "What does 'confidence' mean on a detected parcel?",
+  "How accurate is the model, and how was that measured?",
+  "Where did the training labels come from?",
 ];
 
 export default function AssistantPage() {
@@ -37,7 +38,7 @@ export default function AssistantPage() {
         setError(data.error || "Something went wrong.");
         return;
       }
-      setMessages((m) => [...m, { role: "assistant", content: data.answer }]);
+      setMessages((m) => [...m, { role: "assistant", content: data.answer, sources: data.sources }]);
     } catch (e) {
       setError("Network error reaching the assistant.");
     } finally {
@@ -57,7 +58,7 @@ export default function AssistantPage() {
         </h1>
         <p className="text-muted text-sm mt-1 max-w-2xl">
           Ask about any plot's status, ward, ownership type, or verification history in plain
-          language — built for officials who need an answer in seconds, not a report request.
+          language. Grounded by retrieval over the platform's own state — benchmark scores, the ground-truth dataset and the site registry — with sources shown under every answer.
         </p>
       </header>
 
@@ -83,13 +84,27 @@ export default function AssistantPage() {
           {messages.map((m, i) => (
             <div
               key={i}
-              className={`max-w-[85%] rounded-xl px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap ${
-                m.role === "user"
-                  ? "bg-accent text-ink self-end"
-                  : "bg-surface border border-line self-start"
-              }`}
+              className={`max-w-[85%] flex flex-col gap-1.5 ${m.role === "user" ? "self-end" : "self-start"}`}
             >
-              {m.content}
+              <div
+                className={`rounded-xl px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap ${
+                  m.role === "user" ? "bg-accent text-ink" : "bg-surface border border-line"
+                }`}
+              >
+                {m.content}
+              </div>
+              {m.sources?.length > 0 && (
+                <div className="flex flex-wrap gap-1.5">
+                  {m.sources.map((s) => (
+                    <span
+                      key={s}
+                      className="font-mono text-[10px] text-muted border border-line rounded-full px-2 py-0.5"
+                    >
+                      {s}
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
           ))}
 

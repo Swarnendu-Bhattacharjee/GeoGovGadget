@@ -1,0 +1,12 @@
+{
+  "site": "srm medical",
+  "raw_image": "srm medical.jpg",
+  "annotation_image": "Gemini_Generated_Image_5kde5n5kde5n5kde (1).png",
+  "registration_inliers": 3053,
+  "building_polygons": 24,
+  "mask_coverage_frac": 0.239,
+  "image_size": {
+    "width": 1006,
+    "height": 686
+  }
+}

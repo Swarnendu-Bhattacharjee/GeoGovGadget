@@ -1,0 +1,12 @@
+{
+  "site": "tech 1,2 audi",
+  "raw_image": "tech 1,2 audi.png",
+  "annotation_image": "Gemini_Generated_Image_l89scbl89scbl89s.png",
+  "registration_inliers": 1805,
+  "building_polygons": 23,
+  "mask_coverage_frac": 0.5192,
+  "image_size": {
+    "width": 828,
+    "height": 766
+  }
+}

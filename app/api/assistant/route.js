@@ -1,16 +1,19 @@
 import { NextResponse } from "next/server";
 import { generateFeatures, findOverlaps } from "@/lib/geo";
+import { buildKnowledgeBase, retrieve } from "@/lib/knowledge";
 
 // POST /api/assistant
-// A 24/7 natural-language interface over the plot dataset — the feature a
-// government official would actually use: "what's the status of parcel X",
-// "which plots in Ward 12 are unverified", etc. Grounded by passing the
-// current dataset as context to the LLM (context-stuffing RAG — the dataset
-// here is a couple dozen records, small enough that this is the right tool,
-// not a vector DB).
+// A 24/7 natural-language interface over the platform's own state — the
+// feature an official would actually use ("which parcels are unverified",
+// "how accurate is this model", "is this a legal boundary").
 //
-// Requires GROQ_API_KEY in the environment (local: .env.local, prod: Vercel
-// project env vars). Never hardcode the key in source.
+// Grounding is retrieval over lib/knowledge.js, which assembles its corpus
+// from real artefacts: the benchmark scores the model actually achieved, the
+// ground-truth dataset statistics, the site registry, and scheme context.
+// The retrieved passages are pinned into the prompt and the model is told to
+// answer only from them, so it can't quietly substitute a plausible-sounding
+// figure for one the system holds — the failure mode that matters most when
+// the subject is land records.
 export async function POST(request) {
   const apiKey = process.env.GROQ_API_KEY;
   if (!apiKey) {
@@ -28,34 +31,43 @@ export async function POST(request) {
     return NextResponse.json({ error: "missing question" }, { status: 400 });
   }
 
+  const docs = await buildKnowledgeBase();
+  const retrieved = retrieve(docs, question, 4);
+
+  // The demo parcel dataset the dashboard renders, so questions about
+  // verification status/wards have something concrete to resolve against.
   const featureCollection = generateFeatures("assistant-dataset");
   const idToSurvey = Object.fromEntries(
     featureCollection.features.map((f) => [f.properties.id, f.properties.surveyNo])
   );
   const overlaps = findOverlaps(featureCollection).map(([a, b]) => [idToSurvey[a], idToSurvey[b]]);
-
-  const dataset = featureCollection.features.map((f) => ({
-    id: f.properties.id,
-    class: f.properties.class,
+  const parcels = featureCollection.features.map((f) => ({
     surveyNo: f.properties.surveyNo,
+    class: f.properties.class,
     ward: f.properties.ward,
     ownerType: f.properties.ownerType,
     status: f.properties.status,
     confidence: f.properties.confidence,
     area_sqm: f.properties.area_sqm,
-    floors: f.properties.floors,
     lastVerified: f.properties.lastVerified,
   }));
 
-  const systemPrompt = `You are the GeoGovGadget assistant — a 24/7 query interface for government officials working with AI-extracted cadastral records (parcel boundaries, building footprints, land-use zones) from Problem Statement 26012, "AI-Enabled Automated Cadastral Mapping and Urban Parcel Boundary Extraction using Drone/Satellite Imagery".
+  const systemPrompt = `You are the GeoGovGadget assistant, a query interface for officials working with AI-extracted cadastral records (SIH 2026, problem statement 26012).
 
-Answer questions about the plot dataset and topology check below using only what they contain. Be concise and factual. If asked about a plot, cite its survey number and ward. If asked something the dataset doesn't cover, say so plainly rather than inventing details — this dataset is a demo sample, not a live production database, so say that when it's relevant (e.g. if asked "is this real data"). You may also answer general questions about how the GeoGovGadget platform works (segmentation, topology validation, verification workflow, edge deployment) based on the problem statement above.
+Answer ONLY from the retrieved context and datasets below. Rules:
+- If a figure isn't in the context, say it isn't held rather than estimating. Never invent a built-up area, floor count, ownership, or survey number.
+- Quote real numbers when the context has them (accuracy scores, polygon counts, coordinates).
+- If asked whether output is authoritative, be clear it is a preliminary map for surveyor verification, not a legal boundary.
+- Be concise and factual. No preamble.
 
-Dataset (JSON):
-${JSON.stringify(dataset, null, 2)}
+=== RETRIEVED CONTEXT ===
+${retrieved.map((d) => `[${d.title}]\n${d.text}`).join("\n\n")}
 
-Topology check — pairs of survey numbers whose polygons geometrically overlap (a real, computed encroachment/inconsistency risk, not a demo placeholder):
-${overlaps.length ? JSON.stringify(overlaps) : "none found in the current dataset"}`;
+=== DEMO PARCEL DATASET (dashboard sample, not production records) ===
+${JSON.stringify(parcels, null, 1)}
+
+=== TOPOLOGY CHECK (computed polygon intersections, real geometry) ===
+${overlaps.length ? JSON.stringify(overlaps) : "no overlapping geometries in the current sample"}`;
 
   const messages = [
     { role: "system", content: systemPrompt },
@@ -83,7 +95,8 @@ ${overlaps.length ? JSON.stringify(overlaps) : "none found in the current datase
   }
 
   const data = await res.json();
-  const answer = data.choices?.[0]?.message?.content || "No response generated.";
-
-  return NextResponse.json({ answer });
+  return NextResponse.json({
+    answer: data.choices?.[0]?.message?.content || "No response generated.",
+    sources: retrieved.map((d) => d.title),
+  });
 }

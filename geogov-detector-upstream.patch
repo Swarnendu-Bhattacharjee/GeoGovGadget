@@ -1,0 +1,288 @@
+diff --git a/geo_gov_detector.py b/geo_gov_detector.py
+index 75f5b9e..7ed15a9 100644
+--- a/geo_gov_detector.py
++++ b/geo_gov_detector.py
+@@ -35,105 +35,61 @@ class RawBuildingDetector:
+         self.debug = debug
+ 
+     def preprocess(self, image):
+-        """CLAHE + Otsu with adaptive fallback for low-contrast images."""
++        """
++        Edge-based region proposals, not a brightness-threshold blob mask.
++
++        The previous version (v2) ran Otsu/adaptive thresholding on
++        grayscale: it decides "foreground" purely from whether a pixel is
++        lighter or darker than its neighbors, then has to *guess* which
++        polarity (light-on-dark or dark-on-light) is "the building" — wrong
++        on any frame with more than one brightness pattern (roads, dirt lots,
++        water, buildings all in one image). That's why it merged buildings +
++        parking lots + shorelines into single giant blobs, or inverted
++        everything on complex scenes.
++
++        This version finds building CANDIDATES from edges instead — where
++        does the picture actually have a distinct closed boundary — which
++        works regardless of whether the object is locally bright or dark.
++        Rejecting non-buildings (vegetation, water, roads) then happens
++        per-candidate in find_buildings() by sampling that candidate's own
++        mean color, not by a single global pixel mask (a global HSV mask
++        fragments real buildings wherever a shadow or antenna pixel drifts
++        into the vegetation/water hue range).
++        """
++        self._source = image  # find_buildings() samples color from this per-candidate
++
+         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+ 
+-        # CLAHE for contrast enhancement
++        # Bilateral filter instead of Gaussian blur: smooths flat regions
++        # (roof surfaces, roads, grass) while keeping their edges sharp —
++        # Gaussian blur softens edges everywhere, which is exactly what a
++        # boundary-driven pipeline can't afford.
++        smoothed = cv2.bilateralFilter(gray, d=9, sigmaColor=60, sigmaSpace=60)
+         clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+-        enhanced = clahe.apply(gray)
+-        blurred = cv2.GaussianBlur(enhanced, (5, 5), 0)
++        enhanced = clahe.apply(smoothed)
++
++        median_val = float(np.median(enhanced))
++        lower = int(max(0, 0.66 * median_val))
++        upper = int(min(255, 1.33 * median_val))
++        edges = cv2.Canny(enhanced, lower, upper)
+ 
+         kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5))
+-        kernel_small = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))
++        # Close small gaps in an otherwise-complete building outline (a
++        # roof edge Canny only half-detected), then dilate once so nearly-
++        # closed loops become fully closed before contour-finding.
++        closed = cv2.morphologyEx(edges, cv2.MORPH_CLOSE, kernel, iterations=2)
++        closed = cv2.dilate(closed, kernel, iterations=1)
+ 
+-        # --- Try Otsu first ---
+-        otsu_ret, otsu_thresh = cv2.threshold(
+-            blurred, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU
+-        )
+-        white_ratio = np.sum(otsu_thresh == 255) / otsu_thresh.size
+-
+-        if white_ratio > 0.5:
+-            # Otsu over-segments; try inverted (dark buildings on bright bg)
+-            otsu_inv = cv2.bitwise_not(otsu_thresh)
+-            inv_ratio = np.sum(otsu_inv == 255) / otsu_inv.size
+-            if inv_ratio < 0.5:
+-                thresh = otsu_inv
+-            else:
+-                # Both over-segment; use adaptive with inversion
+-                thresh = cv2.adaptiveThreshold(
+-                    blurred, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+-                    cv2.THRESH_BINARY_INV, 15, 5
+-                )
+-        else:
+-            thresh = otsu_thresh
+-
+-        combined = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, kernel)
+-        combined = cv2.morphologyEx(combined, cv2.MORPH_OPEN, kernel_small)
+-
+-        # --- Check if Otsu result is usable ---
+-        # Count valid contours (area within bounds); if too few, try fallback
+-        img_area = combined.shape[0] * combined.shape[1]
+-        max_contour_area = img_area * 0.3
+-        test_contours, _ = cv2.findContours(combined, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+-        valid_count = sum(
+-            1 for c in test_contours
+-            if self.min_area <= cv2.contourArea(c) <= min(self.max_area, max_contour_area)
+-        )
+-
+-        if valid_count < 3:
+-            # Otsu result has too few valid contours; try adaptive fallback
+-            # Otsu produced too few valid contours; try adaptive threshold
+-            adaptive_inv = cv2.adaptiveThreshold(
+-                blurred, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+-                cv2.THRESH_BINARY_INV, 15, 5
+-            )
+-            adaptive_inv = cv2.morphologyEx(adaptive_inv, cv2.MORPH_CLOSE, kernel)
+-            adaptive_inv = cv2.morphologyEx(adaptive_inv, cv2.MORPH_OPEN, kernel_small)
+-
+-            test_contours2, _ = cv2.findContours(adaptive_inv, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+-            valid2 = sum(
+-                1 for c in test_contours2
+-                if self.min_area <= cv2.contourArea(c) <= min(self.max_area, max_contour_area)
+-            )
+-
+-            if valid2 >= 3:
+-                combined = adaptive_inv
+-            else:
+-                # Try adaptive regular (non-inverted)
+-                adaptive = cv2.adaptiveThreshold(
+-                    blurred, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+-                    cv2.THRESH_BINARY, 15, 5
+-                )
+-                adaptive = cv2.morphologyEx(adaptive, cv2.MORPH_CLOSE, kernel)
+-                adaptive = cv2.morphologyEx(adaptive, cv2.MORPH_OPEN, kernel_small)
+-                test_contours3, _ = cv2.findContours(adaptive, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+-                valid3 = sum(
+-                    1 for c in test_contours3
+-                    if self.min_area <= cv2.contourArea(c) <= min(self.max_area, max_contour_area)
+-                )
+-
+-                if valid3 >= 3:
+-                    combined = adaptive
+-                else:
+-                    # All thresholding failed; try Canny edge detection
+-                    # Auto-determine thresholds from median pixel value
+-                    median_val = np.median(blurred)
+-                    lower = int(max(0, 0.5 * median_val))
+-                    upper = int(min(255, 1.5 * median_val))
+-                    canny = cv2.Canny(blurred, lower, upper)
+-                    canny = cv2.morphologyEx(canny, cv2.MORPH_CLOSE, kernel)
+-                    canny = cv2.morphologyEx(canny, cv2.MORPH_OPEN, kernel_small)
+-                    combined = canny
+-
+-        return combined
++        return closed
+ 
+     def find_buildings(self, mask):
+-        """Find building contours with proper filtering."""
+-        contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
++        """Filter edge-derived candidates by shape AND sampled color."""
++        contours, _ = cv2.findContours(mask, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
+ 
+         height, width = mask.shape
+         img_area = height * width
+         max_contour_area = img_area * 0.3  # No building > 30% of image
++        source = getattr(self, "_source", None)
+ 
+         buildings = []
+         for cnt in contours:
+@@ -144,17 +100,56 @@ class RawBuildingDetector:
+             peri = cv2.arcLength(cnt, True)
+             approx = cv2.approxPolyDP(cnt, 0.02 * peri, True)
+ 
+-            if len(approx) < 4:
++            # Too few corners (a stray line segment) or too many (a jagged
++            # blob the simplification couldn't tame, typical of foliage
++            # edges and shoreline noise) — neither reads as a rooftop.
++            if len(approx) < 4 or len(approx) > 12:
+                 continue
+ 
+             hull = cv2.convexHull(cnt)
+             hull_area = cv2.contourArea(hull)
+             solidity = area / hull_area if hull_area > 0 else 0
+-            if solidity < 0.3:
++            # Real rooftops are close to convex (rectangles, L-shapes at
++            # worst); jagged/star-shaped blobs (tree canopy, shoreline) are not.
++            if solidity < 0.55:
+                 continue
+ 
+-            rect = cv2.minAreaRect(cnt)
+             bbox = cv2.boundingRect(cnt)
++            bx, by, bw, bh = bbox
++            extent = area / float(bw * bh) if bw * bh > 0 else 0
++            if extent < 0.35:
++                continue
++
++            rect = cv2.minAreaRect(cnt)
++            (rw, rh) = rect[1]
++            long_side, short_side = max(rw, rh), min(rw, rh)
++            if short_side > 0 and (long_side / short_side) > 4.5:
++                continue
++
++            # Rectangularity: how much of the *oriented* bounding rectangle
++            # the shape fills. A blob can be reasonably convex (passing
++            # solidity) while still being a poor rectangle fit (an ellipse,
++            # a rounded pond, a diamond) — real buildings fit their own
++            # minAreaRect tightly; most non-buildings don't.
++            rect_area = rw * rh
++            rectangularity = area / rect_area if rect_area > 0 else 0
++            if rectangularity < 0.55:
++                continue
++
++            touches_border = bx <= 1 or by <= 1 or (bx + bw) >= width - 1 or (by + bh) >= height - 1
++            if touches_border and area > self.min_area * 8:
++                continue
++
++            # Per-candidate color check: sample this shape's own mean HSV
++            # (not a global pixel mask) and reject it if it reads as
++            # vegetation or water/shadow. Sampling per-region instead of
++            # per-pixel means a building with a few shadowed or foliage-
++            # adjacent edge pixels doesn't get fragmented or dropped, and a
++            # tree/lake blob that happens to pass every shape filter still
++            # gets caught here.
++            if source is not None and not self._looks_like_a_roof(source, cnt, bbox):
++                continue
++
+             approx_points = approx.reshape(-1, 2).tolist()
+ 
+             buildings.append({
+@@ -168,7 +163,73 @@ class RawBuildingDetector:
+             })
+ 
+         buildings.sort(key=lambda x: x["area"], reverse=True)
+-        return buildings
++        return self._suppress_nested_duplicates(buildings)
++
++    @staticmethod
++    def _looks_like_a_roof(source, cnt, bbox):
++        """
++        Sample a candidate region's own pixels and reject it if they don't
++        look like photographed roof material: vegetation/water by color, or
++        a flat UI element (search bar, icon, button) by having almost no
++        texture at all. A screenshot of a live map page has both problems —
++        real buildings and flat interface chrome both produce clean,
++        roughly-rectangular edges, so shape alone can't tell them apart.
++        Photographed surfaces (roofs, roads, dirt, foliage) always carry
++        some sensor/compression noise; a solid-fill UI icon or button does not.
++        """
++        bx, by, bw, bh = bbox
++        crop = source[by:by + bh, bx:bx + bw]
++        if crop.size == 0:
++            return False
++
++        local_mask = np.zeros((bh, bw), dtype=np.uint8)
++        cv2.drawContours(local_mask, [cnt - [bx, by]], -1, 255, thickness=cv2.FILLED)
++        if cv2.countNonZero(local_mask) == 0:
++            return False
++
++        hsv_crop = cv2.cvtColor(crop, cv2.COLOR_BGR2HSV)
++        mean_h, mean_s, mean_v, _ = cv2.mean(hsv_crop, mask=local_mask)
++
++        is_vegetation = 32 <= mean_h <= 95 and mean_s >= 35
++        is_water_or_deep_shadow = mean_v < 55 and mean_s < 55
++        if is_vegetation or is_water_or_deep_shadow:
++            return False
++
++        gray_crop = cv2.cvtColor(crop, cv2.COLOR_BGR2GRAY)
++        _, stddev = cv2.meanStdDev(gray_crop, mask=local_mask)
++        if float(stddev[0][0]) < 6:
++            return False
++
++        return True
++
++    @staticmethod
++    def _suppress_nested_duplicates(buildings, iou_threshold=0.6):
++        """
++        RETR_LIST (unlike RETR_EXTERNAL) returns both a closed edge loop AND
++        near-duplicate contours just inside/outside it from the dilation
++        pass, so the same rooftop can otherwise show up as 2-3 near-identical
++        polygons. Drop smaller shapes whose bounding box heavily overlaps a
++        larger, already-kept one.
++        """
++        kept = []
++        for b in buildings:  # already sorted largest-area first
++            bx, by, bw, bh = b["bbox"]["x"], b["bbox"]["y"], b["bbox"]["w"], b["bbox"]["h"]
++            is_duplicate = False
++            for k in kept:
++                kx, ky, kw, kh = k["bbox"]["x"], k["bbox"]["y"], k["bbox"]["w"], k["bbox"]["h"]
++                ix1, iy1 = max(bx, kx), max(by, ky)
++                ix2, iy2 = min(bx + bw, kx + kw), min(by + bh, ky + kh)
++                iw, ih = max(0, ix2 - ix1), max(0, iy2 - iy1)
++                inter = iw * ih
++                if inter == 0:
++                    continue
++                smaller_area = min(bw * bh, kw * kh)
++                if smaller_area > 0 and inter / smaller_area > iou_threshold:
++                    is_duplicate = True
++                    break
++            if not is_duplicate:
++                kept.append(b)
++        return kept
+ 
+ 
+ class PlotDetector:

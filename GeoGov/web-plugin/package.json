@@ -1,0 +1,40 @@
+{
+  "name": "geogov-plugin-2.0",
+  "version": "2.0.0",
+  "description": "Building roof boundary detection plugin for Next.js — CV/AI backend for cadastral mapping",
+  "author": "INFERICS",
+  "license": "MIT",
+  "main": "index.js",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "next": "^14.0.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "keywords": [
+    "satellite-imagery",
+    "building-detection",
+    "cadastral-mapping",
+    "opencv",
+    "computer-vision",
+    "nextjs-plugin",
+    "geospatial",
+    "geojson"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/inferics/geogov-gadget-2.0.git"
+  },
+  "config": {
+    "geogov": {
+      "python_path": "/mnt/c/PROJECTS/storage/venv/bin/python3",
+      "detector_script": "/mnt/c/PROJECTS/opencv-GeoGovGadget-2.0/geo_gov_detector.py",
+      "output_dir": "/tmp/geogov_output"
+    }
+  }
+}

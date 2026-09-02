@@ -1,0 +1,12 @@
+{
+  "site": "ubi and valli gate",
+  "raw_image": "ubi and valli gate.png",
+  "annotation_image": "Gemini_Generated_Image_9grac09grac09gra.png",
+  "registration_inliers": 3009,
+  "building_polygons": 17,
+  "mask_coverage_frac": 0.2874,
+  "image_size": {
+    "width": 794,
+    "height": 1196
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "site": "srm dental",
+  "raw_image": "srm dental.jpg",
+  "annotation_image": "Gemini_Generated_Image_b6hrlgb6hrlgb6hr.png",
+  "registration_inliers": 2331,
+  "building_polygons": 17,
+  "mask_coverage_frac": 0.2932,
+  "image_size": {
+    "width": 1600,
+    "height": 1039
+  }
+}

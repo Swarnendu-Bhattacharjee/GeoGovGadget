@@ -1,0 +1,12 @@
+{
+  "site": "bel block and canteen",
+  "raw_image": "bel block and canteen.png",
+  "annotation_image": "Gemini_Generated_Image_mgdtklmgdtklmgdt.png",
+  "registration_inliers": 1509,
+  "building_polygons": 10,
+  "mask_coverage_frac": 0.3664,
+  "image_size": {
+    "width": 590,
+    "height": 1024
+  }
+}
