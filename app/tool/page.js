@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 
@@ -11,11 +11,14 @@ const ENGINE_OPTIONS = [
     id: "unet",
     name: "U-Net (trained)",
     blurb: "Trained on SRM cadastral labels · IoU 0.53 · ~1s",
+    // Exported to ONNX, so this one still runs where there is no Python.
+    browserFallback: true,
   },
   {
     id: "sam",
     name: "Segment Anything",
     blurb: "Zero-shot, class-agnostic · IoU 0.22 · ~19s",
+    browserFallback: false,
   },
 ];
 
@@ -35,6 +38,33 @@ export default function ToolPage() {
   const [selectedId, setSelectedId] = useState(null);
   const [statuses, setStatuses] = useState({});
   const [minConfidence, setMinConfidence] = useState(0);
+  const [capabilities, setCapabilities] = useState(null);
+  const [progress, setProgress] = useState(null);
+
+  // Which engines this deployment can run server-side. On Vercel the answer is
+  // "none" — there is no Python runtime — so the U-Net is run in the browser
+  // from its ONNX export instead. Probing up front means the UI can say so
+  // before an upload rather than after a failed one.
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/detect")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((caps) => {
+        if (!cancelled) setCapabilities(caps ?? { serverPython: false, engines: {} });
+      })
+      .catch(() => {
+        if (!cancelled) setCapabilities({ serverPython: false, engines: {} });
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const serverHas = useCallback(
+    (id) => Boolean(capabilities?.engines?.[id]),
+    [capabilities]
+  );
+  const runsInBrowser = engine === "unet" && capabilities != null && !serverHas("unet");
 
   const allFeatures = result?.geojson?.features || [];
   const features = useMemo(
@@ -55,30 +85,57 @@ export default function ToolPage() {
 
   const selectedFeature = features.find((f) => f.properties.lot_id === selectedId);
 
+  async function runInBrowser(file) {
+    const { detectInBrowser } = await import("@/lib/unet/browser-engine");
+    return detectInBrowser(file, setProgress);
+  }
+
   async function handleFileChange(e) {
     const file = e.target.files?.[0];
+    // Reset the input so re-picking the same file still fires a change event.
+    e.target.value = "";
     if (!file) return;
     setLoading(true);
     setError(null);
     setResult(null);
     setSelectedId(null);
     setStatuses({});
+    setProgress(null);
     try {
-      const body = new FormData();
-      body.append("image", file);
-      body.append("engine", engine);
-      const res = await fetch("/api/detect", { method: "POST", body });
-      const data = await res.json();
-      if (!res.ok) {
-        setError(data.error || "Detection failed.");
+      let data;
+      if (serverHas(engine)) {
+        const body = new FormData();
+        body.append("image", file);
+        body.append("engine", engine);
+        const res = await fetch("/api/detect", { method: "POST", body });
+        data = await res.json();
+        if (!res.ok) {
+          // The server engine can disappear between the probe and the upload
+          // (a redeploy, a moved checkpoint); fall back rather than fail.
+          if (data?.code === "server_engine_unavailable" && engine === "unet") {
+            data = await runInBrowser(file);
+          } else {
+            setError(data.error || "Detection failed.");
+            return;
+          }
+        }
+      } else if (engine === "unet") {
+        data = await runInBrowser(file);
+      } else {
+        setError(
+          "Segment Anything only runs server-side (ml/.venv + a 375MB checkpoint), " +
+            "which this deployment does not host. Use the U-Net engine, or run the " +
+            "app locally to reproduce the head-to-head comparison."
+        );
         return;
       }
       setResult(data);
       setView("overlay");
-    } catch {
-      setError("Network error reaching the detector.");
+    } catch (err) {
+      setError(err?.message ? `Detection failed: ${err.message}` : "Network error reaching the detector.");
     } finally {
       setLoading(false);
+      setProgress(null);
     }
   }
 
@@ -150,18 +207,27 @@ export default function ToolPage() {
             </button>
 
             <div className="flex items-center gap-1 border border-line rounded-lg p-1">
-              {ENGINE_OPTIONS.map((o) => (
-                <button
-                  key={o.id}
-                  onClick={() => setEngine(o.id)}
-                  title={o.blurb}
-                  className={`font-mono text-[11px] px-2.5 py-1.5 rounded transition ${
-                    engine === o.id ? "bg-accent2 text-ink font-semibold" : "text-muted hover:text-[#e7ebf2]"
-                  }`}
-                >
-                  {o.name}
-                </button>
-              ))}
+              {ENGINE_OPTIONS.map((o) => {
+                const unavailable =
+                  capabilities != null && !serverHas(o.id) && !o.browserFallback;
+                return (
+                  <button
+                    key={o.id}
+                    onClick={() => setEngine(o.id)}
+                    disabled={unavailable || loading}
+                    title={
+                      unavailable
+                        ? `${o.blurb} — server-only, not available on this deployment`
+                        : o.blurb
+                    }
+                    className={`font-mono text-[11px] px-2.5 py-1.5 rounded transition disabled:opacity-30 disabled:cursor-not-allowed ${
+                      engine === o.id ? "bg-accent2 text-ink font-semibold" : "text-muted hover:text-[#e7ebf2]"
+                    }`}
+                  >
+                    {o.name}
+                  </button>
+                );
+              })}
             </div>
 
             {result && (
@@ -218,7 +284,7 @@ export default function ToolPage() {
             {!error && !result && !loading && (
               <EmptyState onUpload={() => fileInputRef.current?.click()} engine={engine} />
             )}
-            {loading && <LoadingState engine={engine} />}
+            {loading && <LoadingState engine={engine} inBrowser={runsInBrowser} progress={progress} />}
             {result && !loading && view === "overlay" && (
               <ImageBoundaryOverlay
                 imageSrc={result.originalImageDataUrl}
@@ -354,6 +420,14 @@ export default function ToolPage() {
               SRM sites do have real coordinates and appear on the{" "}
               <Link href="/3d-map" className="text-accent2 hover:underline">3D map</Link>.
             </p>
+            {runsInBrowser && (
+              <p className="text-xs text-muted leading-relaxed mt-3">
+                This deployment has no Python runtime, so the network runs in your browser
+                via ONNX Runtime — the same exported weights, with the tiling and
+                vectorisation ported from the Python engine. Your imagery is never
+                uploaded anywhere.
+              </p>
+            )}
           </div>
         </aside>
       </section>
@@ -361,15 +435,40 @@ export default function ToolPage() {
   );
 }
 
-function LoadingState({ engine }) {
+const PHASE_LABELS = {
+  model: "downloading model weights",
+  inference: "sliding-window inference",
+  vectorising: "vectorising polygons",
+};
+
+function LoadingState({ engine, inBrowser, progress }) {
+  // The first in-browser run pulls ~57MB of weights before it can start, which
+  // is long enough that an unqualified spinner reads as a hang. Say which phase
+  // is running and how far along it is.
+  const pct = progress ? Math.round(progress.progress * 100) : null;
+  const label = progress
+    ? `${PHASE_LABELS[progress.phase] || progress.phase}… ${pct}%`
+    : engine === "unet"
+      ? "sliding-window inference → vectorising polygons…"
+      : "running Segment Anything on GPU… (~20s)";
+
   return (
-    <div className="h-full flex flex-col items-center justify-center gap-3">
+    <div className="h-full flex flex-col items-center justify-center gap-3 px-6 text-center">
       <div className="w-8 h-8 border-2 border-accent border-t-transparent rounded-full animate-spin" />
-      <p className="font-mono text-xs text-muted">
-        {engine === "unet"
-          ? "sliding-window inference → vectorising polygons…"
-          : "running Segment Anything on GPU… (~20s)"}
-      </p>
+      <p className="font-mono text-xs text-muted">{label}</p>
+      {progress && (
+        <div className="w-56 h-1 rounded-full bg-surface2 overflow-hidden">
+          <div
+            className="h-full bg-accent transition-[width] duration-200"
+            style={{ width: `${pct}%` }}
+          />
+        </div>
+      )}
+      {inBrowser && progress?.phase === "model" && (
+        <p className="text-[11px] text-muted max-w-xs">
+          Weights are cached after the first run.
+        </p>
+      )}
     </div>
   );
 }

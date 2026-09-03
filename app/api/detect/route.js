@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { execFile } from "child_process";
 import { promisify } from "util";
-import { mkdtemp, readFile, writeFile, rm } from "fs/promises";
+import { access, mkdtemp, readFile, writeFile, rm } from "fs/promises";
 import { tmpdir } from "os";
 import { join } from "path";
 
@@ -15,18 +15,54 @@ const execFileAsync = promisify(execFile);
 const ENGINES = {
   unet: {
     module: "ml.building_detector.infer_unet",
-    extraArgs: (root) => ["--checkpoint", join(root, "ml", "models", "unet_parcel.pt")],
+    checkpoint: (root) => join(root, "ml", "models", "unet_parcel.pt"),
+    extraArgs: (root) => ["--checkpoint", ENGINES.unet.checkpoint(root)],
     timeout: 60000,
   },
   sam: {
     module: "ml.building_detector.run_for_web",
+    checkpoint: (root) => join(root, "ml", "models", "sam_vit_b_01ec64.pth"),
     extraArgs: (root) => [
-      "--checkpoint", join(root, "ml", "models", "sam_vit_b_01ec64.pth"),
+      "--checkpoint", ENGINES.sam.checkpoint(root),
       "--model-type", "vit_b",
     ],
     timeout: 120000,
   },
 };
+
+const pythonPath = () => join(process.cwd(), "ml", ".venv", "bin", "python3");
+
+const exists = (path) => access(path).then(() => true, () => false);
+
+// Whether this deployment can actually run a given engine server-side.
+//
+// It usually cannot. The venv is gitignored and a hosted Node runtime (Vercel,
+// where this is deployed) has no Python interpreter to begin with, so the
+// answer in production is "no" for both engines — the point of asking is to let
+// the client pick the in-browser ONNX engine up front rather than discovering
+// the failure through a 500 after the user has already waited on an upload.
+async function engineAvailability() {
+  const root = process.cwd();
+  const python = await exists(pythonPath());
+  const entries = await Promise.all(
+    Object.entries(ENGINES).map(async ([name, config]) => [
+      name,
+      python && (await exists(config.checkpoint(root))),
+    ])
+  );
+  return { python, engines: Object.fromEntries(entries) };
+}
+
+// GET /api/detect — capability probe, called by the tool page on mount.
+export async function GET() {
+  const { python, engines } = await engineAvailability();
+  return NextResponse.json(
+    { serverPython: python, engines },
+    // Availability is a property of the deployment, not of the request, but it
+    // must not be baked into a build-time static response either.
+    { headers: { "Cache-Control": "no-store" } }
+  );
+}
 
 // POST /api/detect
 // Runs a real segmentation engine over an uploaded image and returns GeoJSON
@@ -47,8 +83,22 @@ export async function POST(request) {
   }
 
   const projectRoot = process.cwd();
-  const python = join(projectRoot, "ml", ".venv", "bin", "python3");
+  const python = pythonPath();
   const config = ENGINES[engine];
+
+  // Fail fast and legibly when the Python side isn't installed, so the client
+  // can fall back to the browser engine instead of showing a generic 500.
+  if (!(await exists(python)) || !(await exists(config.checkpoint(projectRoot)))) {
+    return NextResponse.json(
+      {
+        error: `The ${engine} engine is not available on this deployment.`,
+        code: "server_engine_unavailable",
+        details:
+          "It runs from ml/.venv with torch + OpenCV, which a hosted Node runtime does not provide.",
+      },
+      { status: 503 }
+    );
+  }
 
   let workDir;
   try {

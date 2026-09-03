@@ -119,6 +119,27 @@ Repo is structured for a zero-config Vercel deploy (Next.js app lives at repo ro
 4. Deploy — Vercel builds `npm run build` and serves it. Every push to `main` auto-deploys;
    every PR gets its own preview URL.
 
+### How `/tool` runs without a Python runtime
+
+`POST /api/detect` shells out to `ml/.venv/bin/python3` with torch + OpenCV. That is fine
+locally and impossible on Vercel: the Node runtime has no Python interpreter, and a torch
+install would not fit inside the function size limit anyway. So the U-Net has two paths:
+
+- **Locally**, if `ml/.venv` and the checkpoint exist, `/tool` posts to `/api/detect` and the
+  Python engine runs (GPU when available). Both engines, including SAM, are selectable.
+- **On Vercel**, `GET /api/detect` reports no server engines, and `/tool` runs the U-Net in
+  the browser via ONNX Runtime Web — `public/models/unet_parcel.onnx`, exported from the same
+  checkpoint by `python -m ml.building_detector.export_onnx` and verified against torch to
+  ~1e-6. The tiling, morphology, contour tracing and Douglas-Peucker steps are ported to JS
+  under `lib/unet/`, so the polygons match the Python engine (worst-case area deviation 3.8%
+  on the held-out law-school site, identical parcel count and ordering). Segment Anything has
+  no browser path — a 375MB checkpoint — so it is disabled there.
+
+The weights are ~57MB and are cached in the browser's Cache Storage after the first run.
+`npm run sync:ort` copies ONNX Runtime's wasm backend into `public/ort/` (wired into
+`prebuild`, and gitignored — Vercel regenerates it on deploy). Nothing is uploaded: in the
+browser path the imagery never leaves the page.
+
 ## Docs
 
 - [`docs/pipeline-diagram.html`](./docs/pipeline-diagram.html) — system flow diagram

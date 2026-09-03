@@ -6,3 +6,9 @@ numpy>=1.24
 Pillow>=10.0
 shapely>=2.0
 tqdm>=4.66
+
+# Only needed to re-run export_onnx.py, which produces the weights the
+# browser engine loads. Not needed to train or to run inference in Python.
+onnx>=1.16
+onnxscript>=0.1
+onnxruntime>=1.17

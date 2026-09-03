@@ -8,14 +8,16 @@
     "start": "next start",
     "lint": "next lint",
     "sync:maplibre": "mkdir -p public/maplibre && cp node_modules/maplibre-gl/dist/maplibre-gl-worker.mjs node_modules/maplibre-gl/dist/maplibre-gl-shared.mjs public/maplibre/",
-    "predev": "npm run sync:maplibre",
-    "prebuild": "npm run sync:maplibre"
+    "predev": "npm run sync:maplibre && npm run sync:ort",
+    "prebuild": "npm run sync:maplibre && npm run sync:ort",
+    "sync:ort": "mkdir -p public/ort && cp node_modules/onnxruntime-web/dist/ort.wasm.bundle.min.mjs node_modules/onnxruntime-web/dist/ort-wasm-simd-threaded.mjs node_modules/onnxruntime-web/dist/ort-wasm-simd-threaded.wasm public/ort/"
   },
   "dependencies": {
     "@turf/turf": "^7.2.0",
     "leaflet": "^1.9.4",
     "maplibre-gl": "^6.6.0",
     "next": "14.2.35",
+    "onnxruntime-web": "^1.29.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-leaflet": "^4.2.1"

@@ -13,6 +13,11 @@ data/outputs/*
 ml/models/*.pth
 ml/.venv/
 
+# onnxruntime-web's wasm backends, copied out of node_modules by `npm run
+# sync:ort` (wired into prebuild, so Vercel regenerates them on deploy).
+# ~42MB of build output that would otherwise be committed twice over.
+public/ort/
+
 
 # Redundant: every entry is already committed extracted under data/IMAGES
 # and data/pranav images/satellite plotted building/
