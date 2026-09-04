@@ -17,7 +17,9 @@ const ENGINE_OPTIONS = [
   {
     id: "yolo",
     name: "YOLO11-seg",
-    blurb: "Instance segmentation, same training sites \u00b7 server-side only",
+    blurb: "Instance segmentation, same training sites \u00b7 IoU 0.53 \u00b7 ~0.7s",
+    // The browser decode (lib/yolo/inference.js) exists but is not yet verified
+    // end to end, so YOLO stays server-side until it is.
     browserFallback: false,
   },
   {
@@ -70,7 +72,7 @@ export default function ToolPage() {
     (id) => Boolean(capabilities?.engines?.[id]),
     [capabilities]
   );
-  const runsInBrowser = engine === "unet" && capabilities != null && !serverHas("unet");
+  const runsInBrowser = engine !== "sam" && capabilities != null && !serverHas(engine);
 
   const allFeatures = result?.geojson?.features || [];
   const features = useMemo(
@@ -93,7 +95,7 @@ export default function ToolPage() {
 
   async function runInBrowser(file) {
     const { detectInBrowser } = await import("@/lib/unet/browser-engine");
-    return detectInBrowser(file, setProgress);
+    return detectInBrowser(file, setProgress, engine);
   }
 
   async function handleFileChange(e) {
@@ -118,14 +120,14 @@ export default function ToolPage() {
         if (!res.ok) {
           // The server engine can disappear between the probe and the upload
           // (a redeploy, a moved checkpoint); fall back rather than fail.
-          if (data?.code === "server_engine_unavailable" && engine === "unet") {
+          if (data?.code === "server_engine_unavailable" && engine !== "sam") {
             data = await runInBrowser(file);
           } else {
             setError(data.error || "Detection failed.");
             return;
           }
         }
-      } else if (engine === "unet") {
+      } else if (engine !== "sam") {
         data = await runInBrowser(file);
       } else {
         setError(
@@ -237,6 +239,15 @@ export default function ToolPage() {
                 );
               })}
             </div>
+
+            {capabilities != null && !serverHas("yolo") && (
+              <span className="font-mono text-[11px] text-muted">
+                YOLO &amp; SAM run server-side —{" "}
+                <Link href="/benchmark" className="text-accent2 hover:underline">
+                  see the scored comparison
+                </Link>
+              </span>
+            )}
 
             {result && (
               <>
