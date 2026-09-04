@@ -15,6 +15,12 @@ const ENGINE_OPTIONS = [
     browserFallback: true,
   },
   {
+    id: "yolo",
+    name: "YOLO11-seg",
+    blurb: "Instance segmentation, same training sites \u00b7 server-side only",
+    browserFallback: false,
+  },
+  {
     id: "sam",
     name: "Segment Anything",
     blurb: "Zero-shot, class-agnostic · IoU 0.22 · ~19s",
@@ -123,9 +129,11 @@ export default function ToolPage() {
         data = await runInBrowser(file);
       } else {
         setError(
-          "Segment Anything only runs server-side (ml/.venv + a 375MB checkpoint), " +
-            "which this deployment does not host. Use the U-Net engine, or run the " +
-            "app locally to reproduce the head-to-head comparison."
+          `The ${engine} engine only runs server-side, from ml/.venv with torch — ` +
+            "which this deployment does not host. Use the U-Net engine, which runs " +
+            "in your browser, or run the app locally to reproduce the full " +
+            "head-to-head. The scored comparison of every engine is on the " +
+            "benchmark page."
         );
         return;
       }

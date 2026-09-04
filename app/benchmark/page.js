@@ -43,6 +43,20 @@ export default async function BenchmarkPage() {
   const best = engines.reduce((a, b) => (b[1].mean.iou > a[1].mean.iou ? b : a));
   const training = data.training;
 
+  // The SIH judges asked us to try YOLO or TensorFlow "instead of OpenCV", so
+  // the two trained detectors get their own head-to-head above the general
+  // table. Which one is reported as winning is read from the data, never typed.
+  const unet = data.engines.unet;
+  const yolo = data.engines.yolo;
+  const headToHead =
+    unet && yolo
+      ? {
+          winner: yolo.mean.iou > unet.mean.iou ? "yolo" : "unet",
+          delta: yolo.mean.iou - unet.mean.iou,
+          deltaPct: ((yolo.mean.iou - unet.mean.iou) / unet.mean.iou) * 100,
+        }
+      : null;
+
   return (
     <main className="min-h-screen">
       <header className="border-b border-line px-6 py-10 max-w-6xl mx-auto">
@@ -68,7 +82,7 @@ export default async function BenchmarkPage() {
 
       {/* Headline comparison */}
       <section className="px-6 py-10 max-w-6xl mx-auto">
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {engines
             .sort((a, b) => b[1].mean.iou - a[1].mean.iou)
             .map(([key, e]) => {
@@ -124,6 +138,87 @@ export default async function BenchmarkPage() {
             })}
         </div>
       </section>
+
+      {/* Detector swap the judges asked for */}
+      {headToHead && (
+        <section className="px-6 pb-10 max-w-6xl mx-auto">
+          <div className="border border-line rounded-xl overflow-hidden">
+            <div className="px-5 py-4 border-b border-line bg-surface">
+              <div className="font-mono text-[11px] tracking-widest text-accent2 uppercase">
+                Detector swap · U-Net vs YOLO
+              </div>
+              <h2 className="font-display font-bold text-lg mt-1">
+                Same sites, same labels, same vectorisation — only the detector changed.
+              </h2>
+            </div>
+
+            <div className="grid md:grid-cols-[1fr_auto_1fr] items-center gap-4 px-5 py-6">
+              {[["unet", unet], ["yolo", yolo]].map(([key, e], i) => {
+                const won = headToHead.winner === key;
+                return (
+                  <div key={key} className={i === 1 ? "md:order-3" : ""}>
+                    <div className="font-mono text-[10px] text-muted uppercase tracking-wide">
+                      {key}
+                    </div>
+                    <div className="font-display font-bold text-sm mt-0.5">{e.label}</div>
+                    <div className="flex items-baseline gap-2 mt-2">
+                      <span
+                        className={`font-display font-extrabold text-5xl tabular-nums ${
+                          won ? "text-accent" : "text-muted"
+                        }`}
+                      >
+                        {e.mean.iou.toFixed(3)}
+                      </span>
+                      <span className="font-mono text-xs text-muted">IoU</span>
+                    </div>
+                    <div className="font-mono text-[11px] text-muted mt-2">
+                      P {e.mean.precision.toFixed(3)} · R {e.mean.recall.toFixed(3)} · F1{" "}
+                      {e.mean.f1.toFixed(3)} · {e.mean_seconds}s
+                    </div>
+                  </div>
+                );
+              })}
+              <div className="md:order-2 text-center px-4">
+                <div className="font-mono text-[10px] text-muted uppercase tracking-widest">
+                  difference
+                </div>
+                <div
+                  className={`font-display font-extrabold text-2xl tabular-nums mt-1 ${
+                    headToHead.delta > 0 ? "text-good" : "text-bad"
+                  }`}
+                >
+                  {headToHead.delta > 0 ? "+" : ""}
+                  {headToHead.delta.toFixed(3)}
+                </div>
+                <div className="font-mono text-[10px] text-muted mt-0.5">
+                  {headToHead.deltaPct > 0 ? "+" : ""}
+                  {headToHead.deltaPct.toFixed(1)}% IoU
+                </div>
+              </div>
+            </div>
+
+            <div className="px-5 py-4 border-t border-line bg-surface text-xs text-muted leading-relaxed">
+              <p>
+                <strong className="text-[#e7ebf2]">OpenCV was never the detector.</strong> It
+                converts predicted masks into polygons — contour tracing, simplification, area and
+                angle. Both engines above use that identical step, so the gap between them is the
+                model and nothing else. The classical OpenCV row further down is a separate
+                heuristic baseline with no learning in it at all, which is why it scores where it
+                does.
+              </p>
+              <p className="mt-2">
+                YOLO11n-seg was trained on the same eight sites, with the same two sites held out,
+                using the polygons in <code className="text-accent2">data/yolo_parcels</code>{" "}
+                derived from the same hand-drawn masks. Reproduce with{" "}
+                <code className="text-accent2">
+                  python -m ml.building_detector.benchmark --engines unet yolo sam opencv
+                </code>
+                .
+              </p>
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Full table */}
       <section className="px-6 pb-10 max-w-6xl mx-auto">

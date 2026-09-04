@@ -67,6 +67,24 @@ def run_sam(image_bgr, checkpoint, device):
     return masks_to_polygons(masks)
 
 
+def run_yolo(image_bgr, checkpoint, device):
+    """YOLO11-seg as the detector, with the identical vectorisation stage.
+
+    Added when the SIH judges asked for YOLO or TensorFlow in place of OpenCV.
+    Only the detector changes: the mask -> polygon step is the same vectorize()
+    the U-Net path uses, so any difference in the numbers below is the model,
+    not the post-processing.
+    """
+    from ultralytics import YOLO
+    from ml.building_detector.infer_unet import vectorize
+    from ml.building_detector.infer_yolo import predict_full as yolo_predict_full
+
+    model = YOLO(checkpoint)
+    prob = yolo_predict_full(model, image_bgr, 0.25, 0 if device == "cuda" else "cpu")
+    polys, _ = vectorize(prob, 0.25)
+    return [p["points"] for p in polys]
+
+
 def run_opencv(image_bgr, *_):
     sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "GeoGov"))
     from geo_gov_detector import RawBuildingDetector
@@ -78,6 +96,7 @@ def run_opencv(image_bgr, *_):
 
 ENGINES = {
     "unet": ("U-Net (trained)", run_unet, "ml/models/unet_parcel.pt"),
+    "yolo": ("YOLO11n-seg (trained)", run_yolo, "ml/models/yolo_parcel.pt"),
     "sam": ("Segment Anything (zero-shot)", run_sam, "ml/models/sam_vit_b_01ec64.pth"),
     "opencv": ("Classical OpenCV (heuristic)", run_opencv, None),
 }
@@ -86,7 +105,7 @@ ENGINES = {
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--data", default="data/ground_truth")
-    ap.add_argument("--engines", nargs="+", default=["unet", "sam", "opencv"])
+    ap.add_argument("--engines", nargs="+", default=["unet", "yolo", "sam", "opencv"])
     ap.add_argument("--sites", nargs="+", default=None,
                     help="default: the held-out validation sites only")
     ap.add_argument("--out", default="public/benchmark.json")
@@ -136,7 +155,7 @@ def main():
         "protocol": (
             "Pixel-level IoU/precision/recall/F1 against hand-drawn cadastral labels "
             "registered onto each RAW capture by SIFT+RANSAC homography. Sites listed "
-            "here are held out of U-Net training entirely."
+            "here are held out of training entirely, for both trained engines."
         ),
         "device": device,
         "engines": results,

@@ -1,10 +1,10 @@
 {
-  "generated": "2026-09-02 10:58:17",
+  "generated": "2026-09-04 07:56:45",
   "evaluated_on": [
     "law school",
     "bel block and canteen"
   ],
-  "protocol": "Pixel-level IoU/precision/recall/F1 against hand-drawn cadastral labels registered onto each RAW capture by SIFT+RANSAC homography. Sites listed here are held out of U-Net training entirely.",
+  "protocol": "Pixel-level IoU/precision/recall/F1 against hand-drawn cadastral labels registered onto each RAW capture by SIFT+RANSAC homography. Sites listed here are held out of training entirely, for both trained engines.",
   "device": "cuda",
   "engines": {
     "unet": {
@@ -15,7 +15,7 @@
         "recall": 0.7493,
         "f1": 0.6888
       },
-      "mean_seconds": 1.07,
+      "mean_seconds": 0.96,
       "per_site": {
         "law school": {
           "iou": 0.5443,
@@ -23,7 +23,7 @@
           "recall": 0.7609,
           "f1": 0.705,
           "polygons": 23,
-          "seconds": 1.76
+          "seconds": 1.56
         },
         "bel block and canteen": {
           "iou": 0.5067,
@@ -31,7 +31,35 @@
           "recall": 0.7378,
           "f1": 0.6726,
           "polygons": 13,
-          "seconds": 0.38
+          "seconds": 0.35
+        }
+      }
+    },
+    "yolo": {
+      "label": "YOLO11n-seg (trained)",
+      "mean": {
+        "iou": 0.532,
+        "precision": 0.6441,
+        "recall": 0.7654,
+        "f1": 0.6944
+      },
+      "mean_seconds": 0.71,
+      "per_site": {
+        "law school": {
+          "iou": 0.5474,
+          "precision": 0.7068,
+          "recall": 0.7083,
+          "f1": 0.7076,
+          "polygons": 21,
+          "seconds": 1.17
+        },
+        "bel block and canteen": {
+          "iou": 0.5166,
+          "precision": 0.5814,
+          "recall": 0.8226,
+          "f1": 0.6813,
+          "polygons": 13,
+          "seconds": 0.25
         }
       }
     },
@@ -43,7 +71,7 @@
         "recall": 0.3153,
         "f1": 0.3599
       },
-      "mean_seconds": 18.56,
+      "mean_seconds": 8.32,
       "per_site": {
         "law school": {
           "iou": 0.1793,
@@ -51,7 +79,7 @@
           "recall": 0.2481,
           "f1": 0.304,
           "polygons": 114,
-          "seconds": 17.34
+          "seconds": 9.43
         },
         "bel block and canteen": {
           "iou": 0.2624,
@@ -59,7 +87,7 @@
           "recall": 0.3826,
           "f1": 0.4157,
           "polygons": 72,
-          "seconds": 19.79
+          "seconds": 7.2
         }
       }
     },
@@ -71,7 +99,7 @@
         "recall": 0.0836,
         "f1": 0.1511
       },
-      "mean_seconds": 0.07,
+      "mean_seconds": 0.04,
       "per_site": {
         "law school": {
           "iou": 0.0733,
@@ -79,7 +107,7 @@
           "recall": 0.0753,
           "f1": 0.1366,
           "polygons": 36,
-          "seconds": 0.1
+          "seconds": 0.05
         },
         "bel block and canteen": {
           "iou": 0.0902,

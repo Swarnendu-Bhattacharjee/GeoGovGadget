@@ -25,3 +25,13 @@ data/pranav images/*.zip
 
 # Scratch outputs from the detection/benchmark scripts
 /tmp_geogov/
+
+# Ultralytics training scratch: run logs, auto-downloaded base weights, and the
+# tiled YOLO dataset — all regenerable from data/ground_truth via
+# `python -m ml.building_detector.prepare_yolo`. Only the trained checkpoint
+# (ml/models/yolo_parcel.pt) is committed.
+runs/
+weights/
+yolo*.pt
+!ml/models/yolo_parcel.pt
+data/yolo_parcels/

@@ -19,6 +19,16 @@ const ENGINES = {
     extraArgs: (root) => ["--checkpoint", ENGINES.unet.checkpoint(root)],
     timeout: 60000,
   },
+  // Added after the SIH judges asked for YOLO in place of OpenCV. Note what
+  // that actually swaps: OpenCV was never the detector, it vectorises masks.
+  // This replaces the detector and keeps the same vectorisation, so /benchmark
+  // compares models rather than post-processing.
+  yolo: {
+    module: "ml.building_detector.infer_yolo",
+    checkpoint: (root) => join(root, "ml", "models", "yolo_parcel.pt"),
+    extraArgs: (root) => ["--checkpoint", ENGINES.yolo.checkpoint(root)],
+    timeout: 90000,
+  },
   sam: {
     module: "ml.building_detector.run_for_web",
     checkpoint: (root) => join(root, "ml", "models", "sam_vit_b_01ec64.pth"),
