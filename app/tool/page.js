@@ -18,8 +18,9 @@ const ENGINE_OPTIONS = [
     id: "yolo",
     name: "YOLO11-seg",
     blurb: "Instance segmentation, same training sites \u00b7 IoU 0.53 \u00b7 ~0.7s",
-    // The browser decode (lib/yolo/inference.js) exists but is not yet verified
-    // end to end, so YOLO stays server-side until it is.
+    // lib/yolo/inference.js decodes this in-browser, but it still stalls on a
+    // dense tile and the cause is not yet found. Left off until it is — an
+    // unproven inference path is worse than an honestly disabled one.
     browserFallback: false,
   },
   {
