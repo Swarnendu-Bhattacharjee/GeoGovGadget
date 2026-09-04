@@ -1,0 +1,38 @@
+{
+ "yolo11n_seg": {
+  "epochs_logged": 70,
+  "total_train_seconds": 425.1,
+  "best_epoch": 62,
+  "best_mask_mAP50": 0.4203,
+  "best_mask_mAP50_95": 0.1481,
+  "final_seg_loss": 2.5064,
+  "base_weights": "yolo11n-seg.pt",
+  "run_dir": "runs/segment/ml/models/yolo/parcel",
+  "train_tiles": 212,
+  "val_tiles": 26,
+  "tiling_stride_px": 160,
+  "best_pt_sha256_16": "5864036dfa347324",
+  "best_pt_bytes": 23349244
+ },
+ "yolo26s_seg": {
+  "epochs_logged": 67,
+  "total_train_seconds": 1278.5,
+  "best_epoch": 11,
+  "best_mask_mAP50": 0.412,
+  "best_mask_mAP50_95": 0.1937,
+  "final_seg_loss": 1.8265,
+  "base_weights": "yolo26s-seg.pt",
+  "run_dir": "runs/segment/runs/yolo26/parcel",
+  "train_tiles": 350,
+  "val_tiles": 37,
+  "tiling_stride_px": 112,
+  "best_pt_sha256_16": "14f7a555ca950a4a",
+  "best_pt_bytes": 92386777
+ },
+ "shipped_checkpoint": {
+  "file": "ml/models/yolo_parcel.pt",
+  "from": "yolo11n_seg (optimizer stripped for inference)",
+  "sha256_16": "04333cddd5dfbfce",
+  "bytes": 6040705
+ }
+}

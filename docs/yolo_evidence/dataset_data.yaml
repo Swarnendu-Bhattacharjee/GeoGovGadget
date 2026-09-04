@@ -1,0 +1,5 @@
+path: /home/swarnendu/GeoGovGadget/data/yolo_parcels
+train: train/images
+val: val/images
+names:
+  0: parcel
