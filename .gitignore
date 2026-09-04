@@ -35,3 +35,7 @@ weights/
 yolo*.pt
 !ml/models/yolo_parcel.pt
 data/yolo_parcels/
+
+# Presentation bundle: copies of files already committed elsewhere
+# (docs/yolo_evidence, ml/models, public/*.json). Rebuildable, ~180MB.
+PROOF/
